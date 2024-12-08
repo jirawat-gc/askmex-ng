@@ -1,0 +1,118 @@
+﻿@using PTTGC.AskMeGc.OpenAI
+
+<div id="chatarea">
+
+    @foreach (var item in this.Session.ChatPrompts)
+    {
+        <div class="coverstaion-item-container @(item.Role) @(item.CustomType)" data-itemid="@(item.CustomId)">
+
+            <div class="conversation-item">
+                <div class="content">
+                    @(this.RenderMarkdown(item.RenderedContent))
+                </div>
+            </div>
+
+            @if (item.References.Count > 0)
+            {
+                <div class="knowledgelist">
+
+                    @foreach (var knowledge in item.References)
+                    {
+                        <div class="knowledgeitem @(knowledge.IsUseful ? "useful" : "") @($"usefulness-{knowledge.Usefulness}")">
+
+                            <div class="content">
+                                @knowledge.Knowledge
+
+@*                                 <img src="/images/scanning_animate.png"
+                                     class="scanning_animation @(Helper_ShowIf(knowledge.IsProcessing))"> *@
+
+                            </div>
+
+                            <h4 style="background-color: hsl( @((knowledge.Certainty * 120) + (120-65)), 100%, 40%)"
+                                data-bs-toggle="modal" data-bs-target="#knowledgeModal">
+                                @* @onclick="() => Preview(knowledge)" @onclick:preventDefault> *@
+                                <i class="bi bi-search"></i>
+                            </h4>
+
+                            <div class="stars">
+                                <div class="bg">
+                                    <span></span>
+                                    <span></span>
+                                    <span></span>
+                                </div>
+                                <div>
+                                    <span class="@(knowledge.Usefulness >= 1 ? "" : "hidden")"></span>
+                                    <span class="@(knowledge.Usefulness >= 2 ? "" : "hidden")"></span>
+                                    <span class="@(knowledge.Usefulness >= 3 ? "" : "hidden")"></span>
+                                </div>
+                            </div>
+                            <div>
+                                @($"{knowledge.Certainty * 100:0.00}%")
+                            </div>
+
+                        </div>
+                    }
+
+                </div>
+            }
+
+
+            @*                         @if (item.Type == "message")
+                        {
+                            <div class="conversation-item">
+                                @foreach (var content in item.Content)
+                                {
+                                    <div class="content">
+                                        @( this.RenderMarkdown( content.Text ?? content.Transcript) )
+                                    </div>
+                                }
+                            </div>
+                        } *@
+
+            @*                         @if (item.Type == "function_call")
+                        {
+                            <div class="functioncall-item @(this.RealtimeApiClient.Conversation.Last() == item ? "last" : "")">
+                                AI request access for: <b>@(item.Name)</b>
+
+                                <div class="spinner-border text-primary" role="status">
+                                </div>
+
+                            </div>
+                        }
+
+                        @if (item.Type == "function_call_output")
+                        {
+                            <div class="functioncalloutput-item @(this.RealtimeApiClient.Conversation.Last() == item ? "last" : "")">
+                                Requested Data was provided to AI.
+                            </div>
+                        } *@
+        </div>
+    }
+
+</div>
+
+@*             <div id="messageContainer">
+                <div id="message">
+                    <div class="tools">
+                    </div>
+                    <div class="inputarea @(this.Helper_MicrophoneClass) d-flex">
+                        @if (this.RealtimeApiClient.IsMicrophoneEnabled)
+                        {
+                            <Histogram HistogramData="this.RealtimeApiClient.Histogram" />
+                            <div class="user-indicator @(this.Helper_UserSpeakingClass)">
+                                <img src="/images/user-speak.svg" />
+                                <img src="/images/user-idle.svg" />
+                            </div>
+                        }
+                        else
+                        {
+                            <textarea class="form-control">
+                            </textarea>
+                        }
+                    </div>
+                    <button class="simple @(this.Helper_MicrophoneClass) "
+                        @onclick="StartMicrophone">
+                        <i class="bi bi-mic"></i>
+                    </button>
+                </div>
+            </div> *@

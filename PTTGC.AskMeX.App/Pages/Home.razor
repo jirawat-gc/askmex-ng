@@ -1,0 +1,135 @@
+﻿@page "/example-home"
+
+<PageTitle>Home</PageTitle>
+
+<!-- Main Header -->
+<header class="main-header">
+
+	<!-- Header Lower -->
+	<div class="header-lower">
+
+		<div class="auto-container">
+			<div class="inner-container d-flex justify-content-between align-items-center">
+
+				<!-- Logo Box -->
+				<div class="logo-box d-flex">
+					<div class="logo">
+						<a href="/">
+@* 							<img src="/images/newtemplate/logo_askmegc.svg" alt="" title=""
+								 style="width: 200px"> *@
+						</a>
+					</div>
+				</div>
+
+				<div class="nav-outer d-flex align-items-center">
+
+					<!-- Main Menu -->
+					<nav class="main-menu show navbar-expand-md">
+						<div class="navbar-header">
+							<button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+								<span class="icon-bar"></span>
+								<span class="icon-bar"></span>
+								<span class="icon-bar"></span>
+							</button>
+						</div>
+
+						<div class="navbar-collapse collapse clearfix" id="navbarSupportedContent">
+							<ul class="navigation clearfix">
+								<AuthorizeView>
+									<NotAuthorized>
+										<li><a href="/authentication/login">Sign-In</a></li>
+									</NotAuthorized>
+									<Authorized>
+
+										<AuthorizeView Roles="askmegc-user" Context="ctx2">
+											<NotAuthorized>
+												<li><a href="https://forms.office.com/r/E1mXzQw5NK" target="_blank">Request Access</a></li>
+											</NotAuthorized>
+											<Authorized>
+												<li><a href="/chatme">Chat Me</a></li>
+												<li><a href="/consultme">Consult Me</a></li>
+												<li><a href="/contentme">Content Me</a></li>
+												<li><a href="/signout">Sign-out</a></li>
+											</Authorized>
+										</AuthorizeView>
+
+									</Authorized>
+								</AuthorizeView>
+
+								<li><a href="mailto:askmegc@pttgcgroup.com">Contact Us</a></li>
+							</ul>
+						</div>
+
+					</nav>
+					<!-- Main Menu End-->
+
+				</div>
+
+				<!-- Outer Box -->
+				<div class="outer-box d-flex align-items-center">
+
+					<!-- Phone Box -->
+					<div class="header-phone">
+						<div class="header-phone_inner">
+						</div>
+					</div>
+
+					<!-- Mobile Navigation Toggler -->
+					<div class="mobile-nav-toggler"><span class="icon"><img src="images/icons/menu.png" alt="" /></span></div>
+
+				</div>
+				<!-- End Outer Box -->
+
+			</div>
+
+		</div>
+	</div>
+	<!-- End Header Lower -->
+	<!-- Sticky Header  -->
+	<div class="sticky-header">
+		<div class="auto-container">
+			<div class="d-flex justify-content-between align-items-center">
+				<!-- Logo -->
+				<div class="logo">
+					<a href="/" title="">
+						logo image
+@* 						<img src="/images/newtemplate/logo_askmegc.svg" alt="" title=""
+							 style="width: 200px"> *@
+					</a>
+				</div>
+
+				<!-- Right Col -->
+				<div class="right-box">
+					<!-- Main Menu -->
+					<nav class="main-menu">
+						<!--Keep This Empty / Menu will come through Javascript-->
+					</nav>
+					<!-- Main Menu End-->
+					<!-- Mobile Navigation Toggler -->
+					<div class="mobile-nav-toggler"><span class="icon"><img src="images/icons/menu.png" alt="" /></span></div>
+
+				</div>
+
+			</div>
+		</div>
+	</div>
+	<!-- End Sticky Menu -->
+	<!-- Mobile Menu  -->
+	<div class="mobile-menu">
+		<div class="menu-backdrop"></div>
+		<div class="close-btn"><span class="icon flaticon-cancel-1"></span></div>
+		<nav class="menu-box">
+			<div class="nav-logo"><a href="/">@* <img src="/image/newtemplate/logo_askmegc.svg" height="50px" alt="" title=""> *@logo image</a></div>
+
+			<div class="menu-outer"><!--Here Menu Will Come Automatically Via Javascript / Same Menu as in Header--></div>
+		</nav>
+	</div>
+	<!-- End Mobile Menu -->
+
+</header>
+<!-- End Main Header -->
+
+
+<h1>Hello, world!</h1>
+
+Welcome to your new app.

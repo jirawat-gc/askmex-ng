@@ -1,0 +1,40 @@
+﻿@page "/authentication/{action}"
+@using Microsoft.AspNetCore.Components.WebAssembly.Authentication
+
+<RemoteAuthenticatorView Action="@Action">
+    <LoggingIn>
+        <h2>กำลังนำคุณไปยังหน้าจอเข้าสู่ระบบ</h2>
+        <a href="/">
+            กลับไปหน้าแรก
+        </a>
+    </LoggingIn>
+    <LogOutSucceeded>
+        <h2>ลงชื่อออกจากระบบแล้ว</h2>
+        <div class="mt-4 mb-2">
+            <a class="btn-style-one theme-btn" href="/authentication/login">
+                <div class="btn-wrap">
+                    <span class="text-one">ลงชื่อเข้าใช้อีกครั้ง <i class="fa-solid fa-arrow-right fa-fw"></i></span>
+                    <span class="text-two">ลงชื่อเข้าใช้อีกครั้ง <i class="fa-solid fa-arrow-right fa-fw"></i></span>
+                </div>
+            </a>
+        </div>
+        <a href="/">
+            กลับไปหน้าแรก
+        </a>
+    </LogOutSucceeded>
+    <LogInFailed>
+
+        <h2>คุณยังไม่ได้ลงชื่อเข้าสู่ระบบในขณะนี้</h2>
+        <div>
+            กรุณาลองใหม่อีกครั้ง
+        </div>
+        <a href="/">
+            กลับไปหน้าแรก
+        </a>
+    </LogInFailed>
+</RemoteAuthenticatorView>
+
+@code {
+    [Parameter]
+    public string Action { get; set; }
+}
