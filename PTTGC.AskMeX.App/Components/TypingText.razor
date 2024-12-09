@@ -1,0 +1,86 @@
+﻿@using System.Collections.Concurrent
+@using Markdig
+@using PTTGC.AskMeGc.BlazorCore
+
+<p style="white-space: pre-wrap">
+    @(this.RenderMarkdown(DisplayText))
+
+    @if (this.IsTyping)
+    {
+        <!--NOTE: current there is no style to make .blinking-cursor to blink as this code was copy from previous project which according to JP: we are likely to change blinking animation to fade-in instead-->
+        <span class="blinking-cursor">|</span>
+    }
+</p>
+
+@code {
+    private MarkdownPipeline? pipeline;
+
+    [Parameter]
+    public string DisplayText { get; set; } = "";
+
+    [Parameter]
+    public RefTracker<TypingText> Tracker { get; set; }
+
+    [Parameter]
+    public bool IsTyping { get; set; }
+
+    [Parameter]
+    public int TypingDelay { get; set; } = 50;
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender)
+        {
+            pipeline = new MarkdownPipelineBuilder().UseAdvancedExtensions().Build();
+        }
+
+        if (firstRender && this.Tracker != null)
+        {
+            this.Tracker.Refs.Add(this);
+        }
+    }
+
+    private Task? _throttleTask;
+    private ConcurrentQueue<string> _tokenQueue = new();
+
+    public void PushToken( string token )
+    {
+        _tokenQueue.Enqueue(token);
+
+        if (_throttleTask == null)
+        {
+            _throttleTask = Task.Run(async () =>
+            {
+                string token;
+                while (_tokenQueue.TryDequeue(out token))
+                {
+                    this.DisplayText += token;
+                    await Task.Delay(this.TypingDelay);
+                    await this.InvokeAsync(this.StateHasChanged);
+                }
+
+                _throttleTask = null;
+            });
+        }
+    }
+
+    public void Notify()
+    {
+        this.StateHasChanged();
+    }
+
+    /// <summary>
+    /// Renders markdown to HTML
+    /// </summary>
+    /// <param name="markdown"></param>
+    /// <returns></returns>
+    MarkupString RenderMarkdown(string markdown)
+    {
+        if (string.IsNullOrEmpty(markdown))
+        {
+            return (MarkupString)string.Empty;
+        }
+
+        return (MarkupString)Markdig.Markdown.ToHtml(markdown, pipeline!);
+    }
+}

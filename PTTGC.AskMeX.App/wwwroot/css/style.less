@@ -65,6 +65,10 @@ body, html {
     }
 }
 
+.content{
+    padding-top: 0;
+}
+
 .home-page {
     background: @dex-gradient-vertical;
     color: white;
@@ -318,6 +322,10 @@ body, html {
     margin: auto;
     padding-top: 20px;
     padding-bottom: 80px;
+
+    .coverstaion-item-container.user:not(:first-child), .coverstaion-item-container.assistant:not(:first-child) {
+        margin-top: 20px;
+    }
 
     .coverstaion-item-container.user {
         text-align: right;

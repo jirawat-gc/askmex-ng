@@ -2,13 +2,23 @@
 
 <div id="chatarea">
 
-    @foreach (var item in this.Session.ChatPrompts)
+    @foreach (var item in this.ChatPrompts)
     {
+        <!--TODO: need to adjust .coverstaion-item-container margin -->
         <div class="coverstaion-item-container @(item.Role) @(item.CustomType)" data-itemid="@(item.CustomId)">
 
             <div class="conversation-item">
                 <div class="content">
-                    @(this.RenderMarkdown(item.RenderedContent))
+                    @if (item.IsStreaming)
+                    {
+                        <TypingText IsTyping=@item.IsStreaming
+                                    Tracker=@TypingTexts
+                                    TypingDelay="0" />
+                    }
+                    else
+                    {
+                        @(this.RenderMarkdown(item.RenderedContent))
+                    }
                 </div>
             </div>
 
@@ -23,7 +33,7 @@
                             <div class="content">
                                 @knowledge.Knowledge
 
-@*                                 <img src="/images/scanning_animate.png"
+                                @*                                 <img src="/images/scanning_animate.png"
                                      class="scanning_animation @(Helper_ShowIf(knowledge.IsProcessing))"> *@
 
                             </div>

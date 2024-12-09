@@ -1,13 +1,20 @@
 ﻿using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
-using PTTGC.AskMeX.App.Components;
+using PTTGC.AskMeX.App.Core.Mediators;
 
 namespace PTTGC.AskMeX.App.Pages;
 
 public partial class Welcome : ComponentBase
 {
+
+    #region Toggleing between Welcome and Chat view
+
     const string WelcomeView = "welcomeView";
     const string ChatView = "chatView";
+    void OpenChatView()
+    {
+        CurrentPage = ChatView;
+    }
 
     void ToggleCurrentPage()
     {
@@ -17,7 +24,9 @@ public partial class Welcome : ComponentBase
     string GetClasses(string viewName, string classesBase)
     {
         if (viewName == CurrentPage)
+        {
             return $"{classesBase} active";
+        }
 
         return classesBase;
     }
@@ -27,15 +36,11 @@ public partial class Welcome : ComponentBase
     string WelcomeViewClasses => GetClasses(WelcomeView, "welcome-view");
     string ChatViewClasses => GetClasses(ChatView, "chat-view");
 
+    #endregion
+
     #region ChatBox related
 
-    ChatSession chatSession;
     bool preventKeyDownOnChatBox = false;
-
-    void OpenChatView()
-    {
-        CurrentPage = ChatView;
-    }
 
     void HandleChatBoxKeyDown(KeyboardEventArgs e)
     {
@@ -43,7 +48,7 @@ public partial class Welcome : ComponentBase
         // below case is for when user press enter without shift key, which will send message to system (AI)
         if (e.Key == "Enter" && !e.ShiftKey)
         {
-            chatSession.SendMessage(UserMessage);
+            Mediator.NotifyUserMessage(UserMessage);
             UserMessage = string.Empty;
             preventKeyDownOnChatBox = true;
 
@@ -62,6 +67,14 @@ public partial class Welcome : ComponentBase
     }
 
     string UserMessage { get; set; }
+#if DEBUG
+        // this is test message for development purpose
+        // = "this is a test, respond with OK";
+        = "Generate 10 sentences of essay";
+#endif
+
+    [Inject]
+    public required ChatSessionMediator Mediator { private get; init; }
 
     #endregion
 }

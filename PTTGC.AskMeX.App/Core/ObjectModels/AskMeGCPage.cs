@@ -14,6 +14,8 @@ using PTTGC.AskMeX.App.Core.Types;
 
 namespace PTTGC.AskMeX.App.Core.ObjectModels;
 
+// NOTE [YO] : has not been using this class as this code was duplicated from AskMeGC Project
+// might need to remove this class when clean up
 public abstract class AskMeGCPage<T> : ComponentBase, IAsyncDisposable where T : OpenAIChatSession, new()
 {
     /// <summary>

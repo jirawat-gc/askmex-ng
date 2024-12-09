@@ -7,6 +7,7 @@ using PTTGC.AskMeGc;
 using PTTGC.AskMeGc.BlazorCore;
 using PTTGC.AskMeX.App;
 using PTTGC.AskMeX.App.Core;
+using PTTGC.AskMeX.App.Core.Mediators;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.RootComponents.Add<App>("#app");
@@ -26,6 +27,9 @@ builder.Services.AddMsalAuthentication(opt =>
 ExtractRolesClaimsPrincipalFactory<RemoteUserAccount>.ValidAUDClaim = builder.Configuration.GetValue<string>("AzureAd:Authentication:ClientId");
 
 builder.Services.AddBlazorBootstrap();
+
+// Register services
+builder.Services.AddScoped<ChatSessionMediator>();
 
 var sentryDSN = builder.Configuration.GetValue<string>("SentryDSN");
 SentrySdk.Init(options =>

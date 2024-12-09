@@ -13,6 +13,9 @@ html {
   color: white;
   text-decoration: none;
 }
+.content {
+  padding-top: 0;
+}
 .home-page {
   background: radial-gradient(ellipse at top, #21d3ee 0%, #589cf6 38%, #757efa 90%, #5460fd 100%);
   color: white;
@@ -238,6 +241,10 @@ html {
   margin: auto;
   padding-top: 20px;
   padding-bottom: 80px;
+}
+#chatarea .coverstaion-item-container.user:not(:first-child),
+#chatarea .coverstaion-item-container.assistant:not(:first-child) {
+  margin-top: 20px;
 }
 #chatarea .coverstaion-item-container.user {
   text-align: right;
