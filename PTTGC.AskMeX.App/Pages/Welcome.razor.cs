@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.AspNetCore.Components.Web;
-using PTTGC.AskMeX.App.Core.Mediators;
+using PTTGC.AskMeX.App.Core.Services;
 
 namespace PTTGC.AskMeX.App.Pages;
 
@@ -48,7 +49,8 @@ public partial class Welcome : ComponentBase
         // below case is for when user press enter without shift key, which will send message to system (AI)
         if (e.Key == "Enter" && !e.ShiftKey)
         {
-            Mediator.NotifyUserMessage(UserMessage);
+            var message = UserMessage;
+            Task.Run(() => Mediator.UserSendMessage(message));
             UserMessage = string.Empty;
             preventKeyDownOnChatBox = true;
 
@@ -68,13 +70,34 @@ public partial class Welcome : ComponentBase
 
     string UserMessage { get; set; }
 #if DEBUG
-        // this is test message for development purpose
-        // = "this is a test, respond with OK";
-        = "Generate 10 sentences of essay";
+    // this is test message for development purpose
+    // = "this is a test, respond with OK";
+    //= "Generate 10 sentences of essay";
+    //= "Provide me 3 of markdown text with example";
 #endif
 
     [Inject]
     public required ChatSessionMediator Mediator { private get; init; }
 
     #endregion
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+
+        await Mediator.LoadUserWorkspace();
+    }
+
+    private void SelectFileForSummarize(InputFileChangeEventArgs e)
+    {
+        OpenChatView();
+
+        // TODO: change this to real implementation
+        Task.Run(() => Mediator.UploadPdfFileToSummarize(e.File));
+    }
+
+    private void SelectFileToWorkSpace(InputFileChangeEventArgs e)
+    {
+        Task.Run(() => Mediator.UploadPdfFile(e.File));
+    }
 }

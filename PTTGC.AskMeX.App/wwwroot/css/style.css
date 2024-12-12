@@ -149,6 +149,10 @@ html {
   fill: #57514f;
   background-color: #00000008;
 }
+.home-page .chat-bar .bar .action-btn img {
+  width: 24px;
+  height: 24px;
+}
 .home-page .chat-bar .chat-box-container {
   padding-left: 1rem;
   padding-right: 1rem;
@@ -284,6 +288,18 @@ html {
   background-color: white;
   border-radius: 8px;
   overflow: clip;
+}
+#chatarea .attached-document-container {
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+}
+#chatarea .attached-document-container img {
+  width: 16px;
+  height: 16px;
+}
+#chatarea .attached-document-container span {
+  margin-left: 4px;
 }
 #chatarea .function_call,
 #chatarea .function_call_output {

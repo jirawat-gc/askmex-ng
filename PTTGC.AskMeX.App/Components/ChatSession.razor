@@ -4,23 +4,40 @@
 
     @foreach (var item in this.ChatPrompts)
     {
-        <!--TODO: need to adjust .coverstaion-item-container margin -->
         <div class="coverstaion-item-container @(item.Role) @(item.CustomType)" data-itemid="@(item.CustomId)">
 
-            <div class="conversation-item">
-                <div class="content">
-                    @if (item.IsStreaming)
-                    {
-                        <TypingText IsTyping=@item.IsStreaming
-                                    Tracker=@TypingTexts
-                                    TypingDelay="0" />
-                    }
-                    else
-                    {
+            @if (item.Role == "user")
+            {
+                <div class="conversation-item">
+                    <div class="content">
                         @(this.RenderMarkdown(item.RenderedContent))
+                    </div>
+                    @if (item.AttachedDocumentUri != null)
+                    {
+                        <a href="@item.AttachedDocumentUri" target="_blank" class="attached-document-container">
+                            <img src="/icons/file-svgrepo-com.svg" /><span>@(DisplayFileName(item.AttachedDocumentUri))</span>
+                        </a>
                     }
                 </div>
-            </div>
+            }
+            else if (item.Role == "assistant")
+            {
+                <div class="conversation-item">
+                    
+                    <div class="content">
+                        @if (item.IsStreaming)
+                        {
+                            <TypingText IsTyping=@item.IsStreaming
+                                        Tracker=@TypingTexts
+                                        TypingDelay="0" />
+                        }
+                        else
+                        {
+                            @(this.RenderMarkdown(item.RenderedContent))
+                        }
+                    </div>
+                </div>
+            }
 
             @if (item.References.Count > 0)
             {

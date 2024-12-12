@@ -2,7 +2,8 @@
 using Microsoft.AspNetCore.Components;
 using PTTGC.AskMeGc.BlazorCore;
 using PTTGC.AskMeGc.OpenAI.Types;
-using PTTGC.AskMeX.App.Core.Mediators;
+using PTTGC.AskMeX.App.Core.Services;
+using System.Text.RegularExpressions;
 
 namespace PTTGC.AskMeX.App.Components;
 
@@ -46,10 +47,16 @@ public partial class ChatSession : IDisposable
         }
     }
 
+    private string DisplayFileName(string uri)
+    {
+        var uriObject = new Uri(uri);
+        return Uri.UnescapeDataString(Path.GetFileName(uriObject.AbsolutePath));
+    }
+
     /// <summary>
     /// Renders markdown to HTML
     /// </summary>
-    /// <param name="markdown"></param>
+    /// <param name="markdown"></param> 
     /// <returns></returns>
     MarkupString RenderMarkdown(string markdown)
     {

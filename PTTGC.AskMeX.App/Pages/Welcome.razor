@@ -1,4 +1,5 @@
 ﻿@page "/"
+@layout MainLayout
 
 <PageTitle>Welcome</PageTitle>
 
@@ -22,12 +23,18 @@
                         </button>
                     </div>
                     <div class="col-6">
-                        <button class="task-small p-2">
+                        <button id="upload-file-to-summarize-btn" class="task-small p-2">
                             <img class="task-img" src="/images/tasks/tasks-summarize.jpg" />
                             <div class="ps-3 header-container">
                                 <h2>Summarize Document</h2>
                             </div>
                         </button>
+                        <InputFile id="upload-file-to-summarize-input" OnChange="SelectFileForSummarize" hidden />
+                        <script>
+                            document.getElementById('upload-file-to-summarize-btn').onclick = () => {
+                                document.getElementById('upload-file-to-summarize-input').click();
+                            };
+                        </script>
                         <button class="task-small p-2 mt-3">
                             <img class="task-img" src="/images/tasks/tasks-hookb.jpg" />
                             <div class="ps-3 header-container">
@@ -96,11 +103,15 @@
                         </div>
 
                         <div class="my-1">
-                            <button class="action-btn">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-plus-lg" viewBox="0 0 16 16">
-                                    <path fill-rule="evenodd" d="M8 2a.5.5 0 0 1 .5.5v5h5a.5.5 0 0 1 0 1h-5v5a.5.5 0 0 1-1 0v-5h-5a.5.5 0 0 1 0-1h5v-5A.5.5 0 0 1 8 2" />
-                                </svg>
+                            <button id="upload-file-btn" class="action-btn">
+                                <img src="/icons/file-upload-svgrepo-com.svg" />
                             </button>
+                            <InputFile id="upload-file-input" OnChange="SelectFileToWorkSpace" hidden />
+                            <script>
+                                document.getElementById('upload-file-btn').onclick = () => {
+                                    document.getElementById('upload-file-input').click();
+                                };
+                            </script>
                         </div>
                         <div class="chat-box-container my-1">
                             <!--NOTE [YO]: might need to convert chatbox to component-->
@@ -119,7 +130,7 @@
                             textarea.addEventListener('input', autoResize);
                             function autoResize() {
                                 // Reset height to auto
-                                this.style.height = 'auto'; 
+                                this.style.height = 'auto';
                                 // Set height to the scroll height
                                 this.style.height = this.scrollHeight + 'px';
                             }

@@ -7,7 +7,7 @@ using PTTGC.AskMeGc;
 using PTTGC.AskMeGc.BlazorCore;
 using PTTGC.AskMeX.App;
 using PTTGC.AskMeX.App.Core;
-using PTTGC.AskMeX.App.Core.Mediators;
+using PTTGC.AskMeX.App.Core.Services;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.RootComponents.Add<App>("#app");
