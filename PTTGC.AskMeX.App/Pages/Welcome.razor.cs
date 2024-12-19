@@ -1,7 +1,10 @@
-﻿using Microsoft.AspNetCore.Components;
+﻿using BlazorBootstrap;
+using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.AspNetCore.Components.Web;
+using Microsoft.JSInterop;
 using PTTGC.AskMeX.App.Core.Services;
+using System.Text;
 
 namespace PTTGC.AskMeX.App.Pages;
 
@@ -12,30 +15,114 @@ public partial class Welcome : ComponentBase
 
     const string WelcomeView = "welcomeView";
     const string ChatView = "chatView";
-    void OpenChatView()
+    bool isWorkspaceFileBrowserActive = false;
+    public void OpenChatView()
     {
-        CurrentPage = ChatView;
+        CurrentPrimaryView = ChatView;
     }
 
     void ToggleCurrentPage()
     {
-        CurrentPage = CurrentPage == WelcomeView ? ChatView : WelcomeView;
+        CurrentPrimaryView = CurrentPrimaryView == WelcomeView ? ChatView : WelcomeView;
     }
 
-    string GetClasses(string viewName, string classesBase)
+    void ToggleWorkspaceFileBrowserView()
     {
-        if (viewName == CurrentPage)
-        {
-            return $"{classesBase} active";
-        }
-
-        return classesBase;
+        isWorkspaceFileBrowserActive = !isWorkspaceFileBrowserActive;
     }
 
-    string CurrentPage { get; set; } = WelcomeView;
+    string currentPrimaryView = WelcomeView;
+    string CurrentPrimaryView
+    {
+        get => currentPrimaryView;
+        set
+        {
+            currentPrimaryView = value;
+            if (value == WelcomeView)
+            {
+                isWorkspaceFileBrowserActive = false;
+            }
+        }
+    }
 
-    string WelcomeViewClasses => GetClasses(WelcomeView, "welcome-view");
-    string ChatViewClasses => GetClasses(ChatView, "chat-view");
+    string WelcomeViewClasses
+    {
+        get
+        {
+            var classes = new StringBuilder();
+            classes.Append("welcome-view");
+            if (currentPrimaryView == WelcomeView)
+            {
+                classes.Append(" active");
+            }
+            return classes.ToString();
+        }
+    }
+
+    string ChatViewClasses
+    {
+        get
+        {
+            var classes = new StringBuilder();
+            classes.Append("chat-view");
+            if (currentPrimaryView == ChatView)
+            {
+                classes.Append(" active");
+            }
+            if (isWorkspaceFileBrowserActive)
+            {
+                classes.Append(" shring-half");
+            }
+
+            return classes.ToString();
+        }
+    }
+
+    string OpenWorkspaceFileBrowserButtonClasses
+    {
+        get
+        {
+            var classes = new StringBuilder();
+            classes.Append("open-workspace-file-broswer-btn");
+            if (currentPrimaryView == ChatView)
+            {
+                classes.Append(" active");
+            }
+            if (isWorkspaceFileBrowserActive)
+            {
+                classes.Append(" workspace-file-browser-active");
+            }
+            return classes.ToString();
+        }
+    }
+
+    string WrokspaceFileBrowserViewClasses
+    {
+        get
+        {
+            var classes = new StringBuilder();
+            classes.Append("workspace-file-browser");
+            if (isWorkspaceFileBrowserActive)
+            {
+                classes.Append(" active");
+            }
+            return classes.ToString();
+        }
+    }
+
+    string BottomContainerClasses
+    {
+        get
+        {
+            var classes = new StringBuilder();
+            classes.Append("bottom-container");
+            if (isWorkspaceFileBrowserActive)
+            {
+                classes.Append(" width-half");
+            }
+            return classes.ToString();
+        }
+    }
 
     #endregion
 
@@ -71,7 +158,7 @@ public partial class Welcome : ComponentBase
     string UserMessage { get; set; }
 #if DEBUG
     // this is test message for development purpose
-    // = "this is a test, respond with OK";
+     = "this is a test, respond with OK";
     //= "Generate 10 sentences of essay";
     //= "Provide me 3 of markdown text with example";
 #endif
@@ -86,18 +173,35 @@ public partial class Welcome : ComponentBase
         await base.OnInitializedAsync();
 
         await Mediator.LoadUserWorkspace();
+        Mediator.WelcomePage = this;
     }
 
-    private void SelectFileForSummarize(InputFileChangeEventArgs e)
-    {
-        OpenChatView();
+    #region File uploading
 
-        // TODO: change this to real implementation
-        Task.Run(() => Mediator.UploadPdfFileToSummarize(e.File));
-    }
+    private Modal fileOptionsModal;
 
     private void SelectFileToWorkSpace(InputFileChangeEventArgs e)
     {
         Task.Run(() => Mediator.UploadPdfFile(e.File));
     }
+
+    private async Task ShowFileOptionsModal()
+    {
+        await fileOptionsModal!.ShowAsync();
+    }
+
+    public async Task HideFileOptionsModal()
+    {
+        await fileOptionsModal!.HideAsync();
+    }
+
+    public async Task ChooseLocalFileToSummarize()
+    {
+        await JS.InvokeVoidAsync("clickById", "upload-file-to-summarize-input");
+    }
+
+    [Inject]
+    public required IJSRuntime JS { private get; init; }
+
+    #endregion
 }

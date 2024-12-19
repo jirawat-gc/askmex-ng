@@ -23,6 +23,7 @@ html {
 .home-page .pages-container {
   height: 100dvh;
   position: relative;
+  overflow-x: hidden;
 }
 .home-page .welcome-view,
 .home-page .chat-view {
@@ -36,7 +37,6 @@ html {
   left: 0;
   right: 0;
   bottom: 0;
-  overflow-y: auto;
   padding-top: 80px;
   padding-bottom: 200px;
 }
@@ -55,6 +55,40 @@ html {
 }
 .home-page .chat-view {
   transform: scale(0.75);
+  will-change: width;
+}
+.home-page .chat-view.active.shring-half {
+  width: 50%;
+}
+.home-page .open-workspace-file-broswer-btn {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 80px;
+  transform: rotate(-90deg);
+  transition: all 0.25s ease-out;
+  opacity: 0;
+}
+.home-page .open-workspace-file-broswer-btn.active {
+  opacity: 1;
+}
+.home-page .open-workspace-file-broswer-btn.workspace-file-browser-active {
+  right: 50%;
+}
+.home-page .workspace-file-browser {
+  pointer-events: none;
+  width: 50%;
+  background-color: white;
+  color: black;
+  height: 100dvh;
+  position: absolute;
+  left: 100%;
+  will-change: left;
+  transition: all 0.25s ease-out;
+}
+.home-page .workspace-file-browser.active {
+  pointer-events: auto;
+  left: 50%;
 }
 .home-page .bottom-container {
   display: flex;
@@ -63,6 +97,11 @@ html {
   bottom: 0;
   position: absolute;
   pointer-events: none;
+  will-change: width;
+  transition: width 0.25s ease-out;
+}
+.home-page .bottom-container.width-half {
+  width: 50%;
 }
 .home-page .t-bottom-fade {
   opacity: 1;
@@ -245,6 +284,8 @@ html {
   margin: auto;
   padding-top: 20px;
   padding-bottom: 80px;
+  will-change: width;
+  transition: width 0.25s ease-out;
 }
 #chatarea .coverstaion-item-container.user:not(:first-child),
 #chatarea .coverstaion-item-container.assistant:not(:first-child) {

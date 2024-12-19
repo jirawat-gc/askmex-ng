@@ -10,6 +10,7 @@ namespace PTTGC.AskMeX.App.Components;
 public partial class ChatSession : IDisposable
 {
     private MarkdownPipeline? pipeline;
+    private bool isWorkspaceFileBrowserActive = false;
 
     protected override void OnAfterRender(bool firstRender)
     {
@@ -23,6 +24,7 @@ public partial class ChatSession : IDisposable
     {
         base.OnInitialized();
 
+        ChatSessionMediator.ChatSessionComponent = this;
         ChatSessionMediator.ChatPromptsChanged += InvokeStateHasChanged;
         ChatSessionMediator.StreamingResponseReceived += ChatSessionMediator_StreamingResponseReceived;
     }

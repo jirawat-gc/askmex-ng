@@ -23,18 +23,12 @@
                         </button>
                     </div>
                     <div class="col-6">
-                        <button id="upload-file-to-summarize-btn" class="task-small p-2">
+                        <button class="task-small p-2" @onclick="ShowFileOptionsModal">
                             <img class="task-img" src="/images/tasks/tasks-summarize.jpg" />
                             <div class="ps-3 header-container">
                                 <h2>Summarize Document</h2>
                             </div>
                         </button>
-                        <InputFile id="upload-file-to-summarize-input" OnChange="SelectFileForSummarize" hidden />
-                        <script>
-                            document.getElementById('upload-file-to-summarize-btn').onclick = () => {
-                                document.getElementById('upload-file-to-summarize-input').click();
-                            };
-                        </script>
                         <button class="task-small p-2 mt-3">
                             <img class="task-img" src="/images/tasks/tasks-hookb.jpg" />
                             <div class="ps-3 header-container">
@@ -78,8 +72,30 @@
                 <ChatSession />
             </div>
         </div>
+         
+        <button class="@OpenWorkspaceFileBrowserButtonClasses" @onclick="ToggleWorkspaceFileBrowserView">
+            Choose File from Workspace
+        </button>
+        <div class="@WrokspaceFileBrowserViewClasses">
+            <h2>Files</h2>
+            <div class="row">
+                @for (int i = 0; i < 5; i++)
+                {
+                    <div class="col-6">
+                        <div>{TODO: pending thumbnail image}</div>
+                        <div>file name</div>
+                        <img width="40" src="/icons/pdf-document-svgrepo-com.svg" />
+                    </div>
+                    <div class="col-6">
+                        <div>{TODO: pending thumbnail image}</div>
+                        <div>file name</div>
+                        <img width="40" src="/icons/excel-document-svgrepo-com.svg" />
+                    </div>
+                }
+            </div>
+        </div>
     </div>
-    <div class="bottom-container">
+    <div class="@BottomContainerClasses">
         <div class="t-bottom-fade">
             <div class="fader-container">
                 <div class="bg-gradient-chat-light"></div>
@@ -149,3 +165,20 @@
         </div>
     </div>
 </div>
+
+<Modal @ref="fileOptionsModal" Title="Please select file options">
+    <FooterTemplate>
+        <Button Color="ButtonColor.Secondary"
+                @onclick="Mediator.OnChoosingExistingFileToSummarize">
+            Choose from existing files
+        </Button>
+        <Button @onclick="ChooseLocalFileToSummarize" Color="ButtonColor.Primary">Upload new File</Button>
+    </FooterTemplate>
+</Modal>
+
+<InputFile id="upload-file-to-summarize-input" OnChange="Mediator.OnSelectNewLocalFileToSummarize" hidden />
+<script>
+    window.clickById = (id) => {
+        document.getElementById(id).click();
+    };
+</script>

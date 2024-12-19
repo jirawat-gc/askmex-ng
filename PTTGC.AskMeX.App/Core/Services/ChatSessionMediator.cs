@@ -8,6 +8,8 @@ using PTTGC.AskMeGc;
 using PTTGC.AskMeGc.OpenAI;
 using PTTGC.AskMeGc.OpenAI.Types;
 using PTTGC.AskMeGc.Workspace;
+using PTTGC.AskMeX.App.Components;
+using PTTGC.AskMeX.App.Pages;
 using System.ComponentModel;
 using System.IO;
 using System.Security.Cryptography;
@@ -42,6 +44,8 @@ public class ChatSessionMediator
         _authenticationStateProvider = authenticationStateProvider;
     }
 
+    #region Methods
+
     public async Task UserSendMessage(string message)
     {
         await InitiateRefreshTokenFlow(async () =>
@@ -53,9 +57,111 @@ public class ChatSessionMediator
         });
     }
 
-    public async Task UploadPdfFileToSummarize(IBrowserFile file)
+    public async Task UploadPdfFile(IBrowserFile file)
+    {
+    }
+
+    private string ComputeSHA1Hash(byte[] data)
+    {
+        using var sha1 = SHA1.Create();
+        byte[] hashBytes = sha1.ComputeHash(data);
+        return BitConverter.ToString(hashBytes).Replace("-", "").ToLowerInvariant();
+    }
+
+    public async Task LoadUserWorkspace()
+    {
+        await InitiateRefreshTokenFlow(async () =>
+        {
+            var state = await _authenticationStateProvider.GetAuthenticationStateAsync();
+            var user = state.User;
+            var fullWorkspaceName = _askMeXGateKeeperClient.GetWorkspaceName(APP_ID, user);
+            var workspaces = await _askMeXGateKeeperClient.ListWorkspaces(APP_ID, SESSION_ID);
+            var userWorkSpace = workspaces.FirstOrDefault(x => x.name == fullWorkspaceName);
+            if (userWorkSpace == null)
+            {
+                var userObjectId = _askMeXGateKeeperClient.GetUserObjectId(user);
+                _userContainerInfo = await _askMeXGateKeeperClient.CreateWorkspace(APP_ID, SESSION_ID, userObjectId);
+            }
+            else
+            {
+                _userContainerInfo = await _askMeXGateKeeperClient.AccessWorkspace(APP_ID, SESSION_ID, fullWorkspaceName);
+            }
+        });
+    }
+
+    /// <summary>in case unable to refresh token, app will navgiate to page "/authentication/logout"</summary>
+    private async Task InitiateRefreshTokenFlow(Action callBack)
+    {
+        var isAccessTokenNull = _accessToken == null;
+        // if the remaining time of token is less than 1 minute, then we will proceed as expired token
+        var hasAccesssTokenExpired = _accessToken?.Expires > DateTimeOffset.Now.AddMinutes(-1);
+        if (isAccessTokenNull || hasAccesssTokenExpired)
+        {
+            try
+            {
+                var tokenResult = await _tokenProvider.RequestAccessToken();
+                var fecthTokenSucess = tokenResult.TryGetToken(out var token);
+                if (fecthTokenSucess == false)
+                {
+                    throw new Exception("Unable to fetch token");
+                }
+
+                if (token == null ||
+                    token.Expires < DateTimeOffset.Now.AddMinutes(-1))
+                {
+                    throw new Exception("Token is invalid or about to expired");
+                }
+
+                // assign token to GCOpenAIPlatform only the first time
+                if (isAccessTokenNull)
+                {
+                    _askMeXGateKeeperClient.AccessToken = token.Value;
+                    _gcOpenAIPlatform.UserToken = token.Value;
+                }
+
+                _accessToken = token;
+            }
+            catch (Exception)
+            {
+                _navigationManagor.NavigateToLogout("/authentication/logout");
+                return;
+            }
+        }
+
+        callBack.Invoke();
+    }
+
+    #endregion
+
+    public event Action ChatPromptsChanged
+    {
+        add { _session.ChatPromptsChanged += value; }
+        remove { _session.ChatPromptsChanged -= value; }
+    }
+
+    public List<OpenAIChatMessage> ChatPrompts => _session.ChatPrompts;
+
+    public event Action<(string token, bool done)> StreamingResponseReceived
+    {
+        add { _session.StreamingResponseReceived += value; }
+        remove { _session.StreamingResponseReceived -= value; }
+    }
+
+    #region Mediator Pattern
+
+    public async Task OnChoosingExistingFileToSummarize()
+    {
+        await WelcomePage.HideFileOptionsModal();
+
+        // TODO: ChatSessionComponent to open file state
+    }
+
+    public async Task OnSelectNewLocalFileToSummarize(InputFileChangeEventArgs e)
     {
         // NOTE : might need to check for _userContainerInfo is null or check for expired token here
+
+        WelcomePage.OpenChatView();
+        var file = e.File;
 
         if (DateTimeOffset.UtcNow > _userContainerInfo!.ExpiresOn.AddMinutes(-5))
         {
@@ -161,91 +267,10 @@ public class ChatSessionMediator
         stream.Close();
     }
 
-    public async Task UploadPdfFile(IBrowserFile file)
-    {
-    }
 
-    private string ComputeSHA1Hash(byte[] data)
-    {
-        using var sha1 = SHA1.Create();
-        byte[] hashBytes = sha1.ComputeHash(data);
-        return BitConverter.ToString(hashBytes).Replace("-", "").ToLowerInvariant();
-    }
+    public Welcome WelcomePage { private get; set; }
 
-    public async Task LoadUserWorkspace()
-    {
-        await InitiateRefreshTokenFlow(async () =>
-        {
-            var state = await _authenticationStateProvider.GetAuthenticationStateAsync();
-            var user = state.User;
-            var fullWorkspaceName = _askMeXGateKeeperClient.GetWorkspaceName(APP_ID, user);
-            var workspaces = await _askMeXGateKeeperClient.ListWorkspaces(APP_ID, SESSION_ID);
-            var userWorkSpace = workspaces.FirstOrDefault(x => x.name == fullWorkspaceName);
-            if (userWorkSpace == null)
-            {
-                var userObjectId = _askMeXGateKeeperClient.GetUserObjectId(user);
-                _userContainerInfo = await _askMeXGateKeeperClient.CreateWorkspace(APP_ID, SESSION_ID, userObjectId);
-            }
-            else
-            {
-                _userContainerInfo = await _askMeXGateKeeperClient.AccessWorkspace(APP_ID, SESSION_ID, fullWorkspaceName);
-            }
-        });
-    }
+    public ChatSession ChatSessionComponent { private get; set; }
 
-    /// <summary>in case unable to refresh token, app will navgiate to page "/authentication/logout"</summary>
-    private async Task InitiateRefreshTokenFlow(Action callBack)
-    {
-        var isAccessTokenNull = _accessToken == null;
-        // if the remaining time of token is less than 1 minute, then we will proceed as expired token
-        var hasAccesssTokenExpired = _accessToken?.Expires > DateTimeOffset.Now.AddMinutes(-1);
-        if (isAccessTokenNull || hasAccesssTokenExpired)
-        {
-            try
-            {
-                var tokenResult = await _tokenProvider.RequestAccessToken();
-                var fecthTokenSucess = tokenResult.TryGetToken(out var token);
-                if (fecthTokenSucess == false)
-                {
-                    throw new Exception("Unable to fetch token");
-                }
-
-                if (token == null ||
-                    token.Expires < DateTimeOffset.Now.AddMinutes(-1))
-                {
-                    throw new Exception("Token is invalid or about to expired");
-                }
-
-                // assign token to GCOpenAIPlatform only the first time
-                if (isAccessTokenNull)
-                {
-                    _askMeXGateKeeperClient.AccessToken = token.Value;
-                    _gcOpenAIPlatform.UserToken = token.Value;
-                }
-
-                _accessToken = token;
-            }
-            catch (Exception)
-            {
-                _navigationManagor.NavigateToLogout("/authentication/logout");
-                return;
-            }
-        }
-
-        callBack.Invoke();
-    }
-
-    public event Action ChatPromptsChanged
-    {
-        add { _session.ChatPromptsChanged += value; }
-        remove { _session.ChatPromptsChanged -= value; }
-    }
-
-    public List<OpenAIChatMessage> ChatPrompts => _session.ChatPrompts;
-
-    public event Action<(string token, bool done)> StreamingResponseReceived
-    {
-        add { _session.StreamingResponseReceived += value; }
-        remove { _session.StreamingResponseReceived -= value; }
-    }
+    #endregion
 }

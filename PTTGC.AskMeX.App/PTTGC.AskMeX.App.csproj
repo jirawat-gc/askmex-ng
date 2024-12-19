@@ -27,4 +27,8 @@
     <ProjectReference Include="..\..\CommonLibrary\PTTGC.AskMeGc\PTTGC.AskMeGc.net8.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="wwwroot\lib\" />
+  </ItemGroup>
+
 </Project>
