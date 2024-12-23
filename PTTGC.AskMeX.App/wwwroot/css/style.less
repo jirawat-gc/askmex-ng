@@ -79,7 +79,6 @@ body, html {
     .pages-container {
         height: 100dvh;
         position: relative;
-        overflow-x: hidden;
     }
 
     .welcome-view, .chat-view {
@@ -95,6 +94,7 @@ body, html {
         bottom: 0;
         padding-top: 80px;
         padding-bottom: 200px;
+        overflow-y: auto;
 
         &.active {
             opacity: 1;
@@ -124,12 +124,18 @@ body, html {
         position: absolute;
         top: 0;
         right: 0;
-        width: 80px;
-        transform: rotate(-90deg);
+        transform: rotate(-90deg) translateX(-76px) translateY(80px);
         transition: all 0.25s ease-out;
         opacity: 0;
+        box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.1);
+        border: 1px solid #ccc;
+        border-top-left-radius: 20px;
+        border-top-right-radius: 20px;
+        background-color: @gc-platinum;
+        padding: 10px 20px;
+        font-size: 16px;
 
-        &.active {
+        &.active, &:hover {
             opacity: 1;
         }
 
@@ -148,10 +154,42 @@ body, html {
         left: 100%;
         will-change: left;
         transition: all 0.25s ease-out;
+        padding: 40px 40px;
+        overflow-y: auto;
 
         &.active {
             pointer-events: auto;
             left: 50%;
+        }
+
+        .file {
+            background: none;
+            border: 0;
+
+            .thumb-nail-container {
+                position: relative;
+
+                .thumb-nail-image {
+                    aspect-ratio: 1 / 1;
+                    width: 100%;
+                    object-fit: cover
+                }
+
+                .file-icon {
+                    position: absolute;
+                    bottom: 4px;
+                    right: 4px;
+                    width: 40px;
+                    height: 40px;
+                    padding: 6px;
+                    background-color: rgba(255, 255, 255,.5);
+                    border-radius: @gc-border-radius-small;
+                }
+            }
+
+            .file-name {
+                word-wrap: break-word;
+            }
         }
     }
 
@@ -564,6 +602,44 @@ body, html {
                 width: 100%;
                 font-size: 18px;
             }
+        }
+    }
+}
+
+@media (max-width: 575px) {
+
+    .home-page {
+
+        .open-workspace-file-broswer-btn {
+
+            &.workspace-file-browser-active {
+                right: 100%;
+            }
+        }
+
+        .workspace-file-browser {
+            width: 100%;
+
+            &.active {
+                left: 0;
+            }
+        }
+
+        .chat-view {
+            transform: scale(.75);
+            will-change: width;
+
+            &.active.shring-half {
+                width: 100%;
+                right: 100%;
+                left: auto;
+            }
+        }
+
+        .bottom-container {
+            width: 100%;
+            right: 100%;
+            left: auto;
         }
     }
 }

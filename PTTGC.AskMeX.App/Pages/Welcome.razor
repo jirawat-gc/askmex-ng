@@ -77,21 +77,34 @@
             Choose File from Workspace
         </button>
         <div class="@WrokspaceFileBrowserViewClasses">
-            <h2>Files</h2>
-            <div class="row">
-                @for (int i = 0; i < 5; i++)
-                {
-                    <div class="col-6">
-                        <div>{TODO: pending thumbnail image}</div>
-                        <div>file name</div>
-                        <img width="40" src="/icons/pdf-document-svgrepo-com.svg" />
-                    </div>
-                    <div class="col-6">
-                        <div>{TODO: pending thumbnail image}</div>
-                        <div>file name</div>
-                        <img width="40" src="/icons/excel-document-svgrepo-com.svg" />
-                    </div>
-                }
+            <div class="container">
+                <h2>Files</h2>
+                <div class="row">
+                    @foreach (var file in Mediator.WorksapceFiles)
+                    {
+                        var fileType = file.FileExtension;
+                        <a href class="col-xxl-3 col-lg-4 col-md-6 col-sm-12 col-6 my-3 file">
+                            <div class="thumb-nail-container">
+                                <img class="thumb-nail-image" src="@file.ThumbnailUrl" onerror="displayDefaultThumbailImage(event, '@(file.FileExtension)')" />
+                                @if (file.FileExtension == ".pdf")
+                                {
+                                    <img class="file-icon" src="/icons/pdf-svgrepo-com.svg" />
+                                }
+                                else if (file.FileExtension == ".xlsx")
+                                {
+                                    <img class="file-icon" src="/icons/excel-svgrepo-com.svg" />
+                                }
+                            </div>
+                            <div class="file-name">@file.Name</div>
+                        </a>
+                    }
+                    <script>
+                        function displayDefaultThumbailImage(event){
+                            event.target.onerror = null;
+                            event.target.src = '/icons/file-color-svgrepo-com.svg';
+                        }
+                    </script>
+                </div>
             </div>
         </div>
     </div>

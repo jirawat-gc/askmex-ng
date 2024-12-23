@@ -31,6 +31,16 @@ public partial class Welcome : ComponentBase
         isWorkspaceFileBrowserActive = !isWorkspaceFileBrowserActive;
     }
 
+    public void OpenWorkspaceFileBrowserView()
+    {
+        isWorkspaceFileBrowserActive = true;
+    }
+
+    public new void StateHasChanged()
+    {
+        base.StateHasChanged();
+    }
+
     string currentPrimaryView = WelcomeView;
     string CurrentPrimaryView
     {
@@ -38,7 +48,7 @@ public partial class Welcome : ComponentBase
         set
         {
             currentPrimaryView = value;
-            if (value == WelcomeView)
+            if (value != ChatView)
             {
                 isWorkspaceFileBrowserActive = false;
             }
@@ -51,7 +61,7 @@ public partial class Welcome : ComponentBase
         {
             var classes = new StringBuilder();
             classes.Append("welcome-view");
-            if (currentPrimaryView == WelcomeView)
+            if (CurrentPrimaryView == WelcomeView)
             {
                 classes.Append(" active");
             }
@@ -65,7 +75,7 @@ public partial class Welcome : ComponentBase
         {
             var classes = new StringBuilder();
             classes.Append("chat-view");
-            if (currentPrimaryView == ChatView)
+            if (CurrentPrimaryView == ChatView)
             {
                 classes.Append(" active");
             }
@@ -84,7 +94,7 @@ public partial class Welcome : ComponentBase
         {
             var classes = new StringBuilder();
             classes.Append("open-workspace-file-broswer-btn");
-            if (currentPrimaryView == ChatView)
+            if (CurrentPrimaryView == ChatView)
             {
                 classes.Append(" active");
             }

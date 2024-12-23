@@ -23,7 +23,6 @@ html {
 .home-page .pages-container {
   height: 100dvh;
   position: relative;
-  overflow-x: hidden;
 }
 .home-page .welcome-view,
 .home-page .chat-view {
@@ -39,6 +38,7 @@ html {
   bottom: 0;
   padding-top: 80px;
   padding-bottom: 200px;
+  overflow-y: auto;
 }
 .home-page .welcome-view.active,
 .home-page .chat-view.active {
@@ -64,12 +64,19 @@ html {
   position: absolute;
   top: 0;
   right: 0;
-  width: 80px;
-  transform: rotate(-90deg);
+  transform: rotate(-90deg) translateX(-76px) translateY(80px);
   transition: all 0.25s ease-out;
   opacity: 0;
+  box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.1);
+  border: 1px solid #ccc;
+  border-top-left-radius: 20px;
+  border-top-right-radius: 20px;
+  background-color: #DBDAD6;
+  padding: 10px 20px;
+  font-size: 16px;
 }
-.home-page .open-workspace-file-broswer-btn.active {
+.home-page .open-workspace-file-broswer-btn.active,
+.home-page .open-workspace-file-broswer-btn:hover {
   opacity: 1;
 }
 .home-page .open-workspace-file-broswer-btn.workspace-file-browser-active {
@@ -85,10 +92,37 @@ html {
   left: 100%;
   will-change: left;
   transition: all 0.25s ease-out;
+  padding: 40px 40px;
+  overflow-y: auto;
 }
 .home-page .workspace-file-browser.active {
   pointer-events: auto;
   left: 50%;
+}
+.home-page .workspace-file-browser .file {
+  background: none;
+  border: 0;
+}
+.home-page .workspace-file-browser .file .thumb-nail-container {
+  position: relative;
+}
+.home-page .workspace-file-browser .file .thumb-nail-container .thumb-nail-image {
+  aspect-ratio: 1 / 1;
+  width: 100%;
+  object-fit: cover;
+}
+.home-page .workspace-file-browser .file .thumb-nail-container .file-icon {
+  position: absolute;
+  bottom: 4px;
+  right: 4px;
+  width: 40px;
+  height: 40px;
+  padding: 6px;
+  background-color: rgba(255, 255, 255, 0.5);
+  border-radius: 8px;
+}
+.home-page .workspace-file-browser .file .file-name {
+  word-wrap: break-word;
 }
 .home-page .bottom-container {
   display: flex;
@@ -440,4 +474,29 @@ html {
   display: block !important;
   width: 100%;
   font-size: 18px;
+}
+@media (max-width: 575px) {
+  .home-page .open-workspace-file-broswer-btn.workspace-file-browser-active {
+    right: 100%;
+  }
+  .home-page .workspace-file-browser {
+    width: 100%;
+  }
+  .home-page .workspace-file-browser.active {
+    left: 0;
+  }
+  .home-page .chat-view {
+    transform: scale(0.75);
+    will-change: width;
+  }
+  .home-page .chat-view.active.shring-half {
+    width: 100%;
+    right: 100%;
+    left: auto;
+  }
+  .home-page .bottom-container {
+    width: 100%;
+    right: 100%;
+    left: auto;
+  }
 }
