@@ -65,6 +65,7 @@ public class ChatSessionMediator
 
     public async Task UploadPdfFile(IBrowserFile file)
     {
+        throw new NotImplementedException();
     }
 
     private string ComputeSHA1Hash(byte[] data)
@@ -168,8 +169,21 @@ public class ChatSessionMediator
         WelcomePage.HideWorkspaceFileBrowserView();
         WelcomePage.StateHasChanged();
 
-        // TODO: load json not pdf file put into tag/DOM and insert as prompt
-        // document inteligence will be able to read the content
+        if (file.FileExtension != ".pdf")
+        {
+            throw new NotSupportedException("this feature only support .pdf file type");
+        }
+
+        var fileName = file.Name;
+        var client = _userContainerInfo!.GetContainerClient();
+        var jsonBlobName = _userContainerInfo.GetDocumentJsonBlobName(fileName);
+        var jsonBlobClient = client.GetBlobClient(jsonBlobName);
+        var document = await jsonBlobClient.GetJson<EmbeddedDocument>();
+
+        var pdfBlobName = _userContainerInfo.GetDocumentBlobName(fileName);
+        var pdfBlobClient = client.GetBlobClient(pdfBlobName);
+        var pdfUrl = pdfBlobClient.Uri.ToString();
+        await SummarizeFileContent(document, pdfUrl);
     }
 
     public async Task OnSelectNewLocalPdfFileToSummarize(InputFileChangeEventArgs e)
@@ -299,33 +313,41 @@ public class ChatSessionMediator
                 WelcomePage.StateHasChanged();
             }
 
-            // read text from PDF file
-            var pdfContentBuilder = new StringBuilder();
-            pdfContentBuilder.Append("<content>");
-            foreach (var pageContent in document.PageContents)
-            {
-                pdfContentBuilder.Append("<page>");
-                pdfContentBuilder.Append(pageContent);
-                pdfContentBuilder.Append("</page>");
-            }
-            pdfContentBuilder.Append("</content>");
-
-            // insert content (context) in file to ChatPrompts's system
-            _session.ChatPrompts.Add(new()
-            {
-                Role = ChatPromptRoles.System,
-                Content = pdfContentBuilder.ToString()
-            });
-
-            // insert user prompt (command)
             var attachedUri = pdfBlobClient.Uri.AbsoluteUri;
-            _session.AddNewUserPrompt(
-                "Base on <content> in latest system's prompt, Summarize content",
-                attachedDocumentUri: attachedUri);
-
-            // summit prompts
-            await _session.InvokeAI(new() { Temperature = 0, MaxTokens = 1000 });
+            await SummarizeFileContent(document, attachedUri);
         });
+    }
+
+    /// <summary>
+    /// Read content from document and insert as ChatPrompts's system and inser user prompt to summarize content
+    /// </summary>
+    private async Task SummarizeFileContent(EmbeddedDocument document, string fileUrl)
+    {
+        // read text from PDF file
+        var pdfContentBuilder = new StringBuilder();
+        pdfContentBuilder.Append("<content>");
+        foreach (var pageContent in document.PageContents)
+        {
+            pdfContentBuilder.Append("<page>");
+            pdfContentBuilder.Append(pageContent);
+            pdfContentBuilder.Append("</page>");
+        }
+        pdfContentBuilder.Append("</content>");
+
+        // insert content (context) in file to ChatPrompts's system
+        _session.ChatPrompts.Add(new()
+        {
+            Role = ChatPromptRoles.System,
+            Content = pdfContentBuilder.ToString()
+        });
+
+        // insert user prompt (command)
+        _session.AddNewUserPrompt(
+            "Base on <content> in latest system's prompt, Summarize content",
+            attachedDocumentUri: fileUrl);
+
+        // summit prompts
+        await _session.InvokeAI(new() { Temperature = 0, MaxTokens = 1000 });
     }
 
     public Welcome WelcomePage { private get; set; }
