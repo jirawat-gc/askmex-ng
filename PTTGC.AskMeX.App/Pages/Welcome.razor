@@ -77,33 +77,42 @@
             Choose File from Workspace
         </button>
         <div class="@WrokspaceFileBrowserViewClasses">
-            <div class="container">
+            <div class="container files-container">
                 <h2>Files</h2>
-                <div class="row">
-                    @foreach (var file in Mediator.WorksapceFiles)
-                    {
-                        var fileType = file.FileExtension;
-                        <a href class="col-xxl-3 col-lg-4 col-md-6 col-sm-12 col-6 my-3 file">
-                            <div class="thumb-nail-container">
-                                <img class="thumb-nail-image" src="@file.ThumbnailUrl" onerror="displayDefaultThumbailImage(event, '@(file.FileExtension)')" />
-                                @if (file.FileExtension == ".pdf")
-                                {
-                                    <img class="file-icon" src="/icons/pdf-svgrepo-com.svg" />
-                                }
-                                else if (file.FileExtension == ".xlsx")
-                                {
-                                    <img class="file-icon" src="/icons/excel-svgrepo-com.svg" />
-                                }
-                            </div>
-                            <div class="file-name">@file.Name</div>
-                        </a>
-                    }
+                <div class="body">
+                    <div class="row">
+                        @foreach (var file in Mediator.WorksapceFiles)
+                        {
+                            var fileType = file.FileExtension;
+                            <button @onclick="() => SelectFile(file)"
+                                class="col-xxl-3 col-lg-4 col-md-6 col-sm-12 col-6 my-3 @(GetFileClasses(file))">
+                                <div class="thumb-nail-container">
+                                    @if (file.FileExtension == ".pdf")
+                                    {
+                                        <img class="thumb-nail-image" src="@file.ThumbnailUrl" onerror="displayDefaultThumbailImage(event, '@(file.FileExtension)')" />
+                                        <img class="file-icon" src="/icons/pdf-svgrepo-com.svg" />
+                                    }
+                                    else if (file.FileExtension == ".xlsx")
+                                    {
+                                        <img class="thumb-nail-image" src="/icons/file-color-svgrepo-com.svg" />
+                                        <img class="file-icon" src="/icons/excel-svgrepo-com.svg" />
+                                    }
+                                </div>
+                                <div class="file-name">@file.Name</div>
+                            </button>
+                        }
+                    </div>
                     <script>
                         function displayDefaultThumbailImage(event){
                             event.target.onerror = null;
                             event.target.src = '/icons/file-color-svgrepo-com.svg';
                         }
                     </script>
+                </div>
+                <div class="footer">
+                    <button @onclick="() => Mediator.OnConfirmToUseSelectedWorkspaceFileToSummarize(_selectedFile!)"
+                        type="button" class="btn btn-primary @(ConfirmBtnClasses)">Confirm</button>
+                    <button @onclick="HideWorkspaceFileBrowserView" type="button" class="btn btn-secondary">Close</button>
                 </div>
             </div>
         </div>
@@ -135,12 +144,12 @@
                             <button id="upload-file-btn" class="action-btn">
                                 <img src="/icons/file-upload-svgrepo-com.svg" />
                             </button>
-                            <InputFile id="upload-file-input" OnChange="SelectFileToWorkSpace" hidden />
+@*                             <InputFile id="upload-file-input" OnChange="SelectFileToWorkSpace" hidden />
                             <script>
                                 document.getElementById('upload-file-btn').onclick = () => {
                                     document.getElementById('upload-file-input').click();
                                 };
-                            </script>
+                            </script> *@
                         </div>
                         <div class="chat-box-container my-1">
                             <!--NOTE [YO]: might need to convert chatbox to component-->
@@ -182,14 +191,14 @@
 <Modal @ref="fileOptionsModal" Title="Please select file options">
     <FooterTemplate>
         <Button Color="ButtonColor.Secondary"
-                @onclick="Mediator.OnChoosingExistingFileToSummarize">
+                @onclick="OnChoosingExistingFileToSummarize">
             Choose from existing files
         </Button>
         <Button @onclick="ChooseLocalFileToSummarize" Color="ButtonColor.Primary">Upload new File</Button>
     </FooterTemplate>
 </Modal>
 
-<InputFile id="upload-file-to-summarize-input" OnChange="Mediator.OnSelectNewLocalFileToSummarize" hidden />
+<InputFile id="upload-file-to-summarize-input" OnChange="Mediator.OnSelectNewLocalPdfFileToSummarize" hidden />
 <script>
     window.clickById = (id) => {
         document.getElementById(id).click();

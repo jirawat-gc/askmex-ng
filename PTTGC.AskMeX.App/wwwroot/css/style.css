@@ -99,9 +99,26 @@ html {
   pointer-events: auto;
   left: 50%;
 }
+.home-page .workspace-file-browser .files-container {
+  flex-direction: column;
+  height: 100%;
+  display: flex;
+}
+.home-page .workspace-file-browser .files-container .body {
+  height: 100%;
+  overflow-y: auto;
+}
+.home-page .workspace-file-browser .files-container .body .row {
+  margin: 0;
+}
 .home-page .workspace-file-browser .file {
   background: none;
   border: 0;
+  text-align: left;
+}
+.home-page .workspace-file-browser .file.selected {
+  background-color: #29ace2;
+  color: white;
 }
 .home-page .workspace-file-browser .file .thumb-nail-container {
   position: relative;

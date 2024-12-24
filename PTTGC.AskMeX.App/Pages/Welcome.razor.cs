@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.JSInterop;
 using PTTGC.AskMeX.App.Core.Services;
+using PTTGC.AskMeX.App.Core.Types;
 using System.Text;
 
 namespace PTTGC.AskMeX.App.Pages;
@@ -28,12 +29,25 @@ public partial class Welcome : ComponentBase
 
     void ToggleWorkspaceFileBrowserView()
     {
-        isWorkspaceFileBrowserActive = !isWorkspaceFileBrowserActive;
+        if (isWorkspaceFileBrowserActive)
+        {
+            HideWorkspaceFileBrowserView();
+        }
+        else
+        {
+            OpenWorkspaceFileBrowserView();
+        }
     }
 
     public void OpenWorkspaceFileBrowserView()
     {
         isWorkspaceFileBrowserActive = true;
+    }
+
+    public void HideWorkspaceFileBrowserView()
+    {
+        isWorkspaceFileBrowserActive = false;
+        _selectedFile = null;
     }
 
     public new void StateHasChanged()
@@ -212,6 +226,48 @@ public partial class Welcome : ComponentBase
 
     [Inject]
     public required IJSRuntime JS { private get; init; }
+
+    #endregion
+
+    #region Select Workspace File
+
+    private WorkspaceFile? _selectedFile;
+
+    private void SelectFile(WorkspaceFile file)
+    {
+        _selectedFile = file;
+    }
+
+    private string GetFileClasses(WorkspaceFile file)
+    {
+        var classes = new StringBuilder();
+        classes.Append("file");
+        if (_selectedFile == file)
+        {
+            classes.Append(" selected");
+        }
+        return classes.ToString();
+    }
+
+    public async Task OnChoosingExistingFileToSummarize()
+    {
+        await HideFileOptionsModal();
+        OpenChatView();
+        OpenWorkspaceFileBrowserView();
+    }
+
+    private string ConfirmBtnClasses
+    {
+        get
+        {
+            if (_selectedFile == null)
+            {
+                return "disabled";
+            }
+
+            return "";
+        }
+    }
 
     #endregion
 }

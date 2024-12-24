@@ -52,11 +52,11 @@ SentrySdk.Init(options =>
 Configuration.Default.Container = builder.Configuration.GetValue<string>(key: "ConfigurationStorage");
 
 AskMeXGateKeeperClient.Instance.BaseAddress = builder.Configuration.GetValue<string>("GateKeeperUrl");
-AskMeXGateKeeperClient.Instance.BlobStorageAddress = builder.Configuration.GetValue<string>("ConfigurationStorage");
+AskMeXGateKeeperClient.Instance.ConfigContainer = builder.Configuration.GetValue<string>("ConfigurationStorage");
 AskMeXGateKeeperClient.Instance.BlobStorageBaseAddress = builder.Configuration.GetValue<string>("BlobBaseAddress");
 
 GCOpenAIPlatform.Instance.PlatformUrl = builder.Configuration.GetValue<string>("PlatformUrl");
-GCOpenAIPlatform.Instance.ConfigurationStorage = builder.Configuration.GetValue<string>("ConfigurationStorage");
+GCOpenAIPlatform.Instance.ConfigContainer = builder.Configuration.GetValue<string>("ConfigurationStorage");
 GCOpenAIPlatform.Instance.Company = builder.Configuration.GetValue<string>("CompanyCode");
 
 Action<HttpRequestMessage> streamingEnable = (req) =>

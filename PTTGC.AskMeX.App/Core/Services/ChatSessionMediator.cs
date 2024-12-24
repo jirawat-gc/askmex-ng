@@ -5,12 +5,14 @@ using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.AspNetCore.Components.WebAssembly.Authentication;
 using Microsoft.JSInterop;
 using PTTGC.AskMeGc;
+using PTTGC.AskMeGc.DocumentEmbedding;
 using PTTGC.AskMeGc.OpenAI;
 using PTTGC.AskMeGc.OpenAI.Types;
 using PTTGC.AskMeGc.Workspace;
 using PTTGC.AskMeX.App.Components;
 using PTTGC.AskMeX.App.Core.Types;
 using PTTGC.AskMeX.App.Pages;
+using System.IO;
 using System.Security.Cryptography;
 using System.Text;
 using UglyToad.PdfPig;
@@ -161,50 +163,48 @@ public class ChatSessionMediator
 
     #region Mediator Pattern
 
-    public async Task OnChoosingExistingFileToSummarize()
+    public async Task OnConfirmToUseSelectedWorkspaceFileToSummarize(WorkspaceFile file)
     {
-        await WelcomePage.HideFileOptionsModal();
-        WelcomePage.OpenWorkspaceFileBrowserView();
+        WelcomePage.HideWorkspaceFileBrowserView();
+        WelcomePage.StateHasChanged();
 
-        // TODO: ChatSessionComponent to open file state
+        // TODO: load json not pdf file put into tag/DOM and insert as prompt
+        // document inteligence will be able to read the content
     }
 
-    public async Task OnSelectNewLocalFileToSummarize(InputFileChangeEventArgs e)
+    public async Task OnSelectNewLocalPdfFileToSummarize(InputFileChangeEventArgs e)
     {
         await WelcomePage.HideFileOptionsModal();
         WelcomePage.OpenChatView();
         WelcomePage.StateHasChanged();
         var file = e.File;
+        var fileName = file.Name;
+
+        // NOTE : might need to check for _userContainerInfo is null or check for expired token here
+        var fileContentType = file.ContentType;
+        if (fileContentType != "application/pdf")
+        {
+            throw new Exception("Invalid file type, only PDF file is allowed");
+        }
 
         await Task.Run(async () =>
         {
-            // NOTE : might need to check for _userContainerInfo is null or check for expired token here
-            if (DateTimeOffset.UtcNow > _userContainerInfo!.ExpiresOn.AddMinutes(-5))
-            {
-                throw new Exception("User Storage Token was expired");
-            }
-
-            var fileContentType = file.ContentType;
-            if (fileContentType != "application/pdf")
-            {
-                throw new Exception("Invalid file type, only PDF file is allowed");
-            }
-
-            // Compute SHA1 Hash from file content
+            // upload pdf, thumpnail, json content, etc to blob storage
             using var stream = file.OpenReadStream();
-            using var memoryStream = new MemoryStream();
-            await stream.CopyToAsync(memoryStream);
+            using var pdfStream = new MemoryStream();
+            await stream.CopyToAsync(pdfStream);
             stream.Close();
-            byte[] fileBytes = memoryStream.ToArray();
+            byte[] fileBytes = pdfStream.ToArray();
             var fileHash = ComputeSHA1Hash(fileBytes);
 
             // Get BlobClient
             var client = _userContainerInfo!.GetContainerClient();
-            var blobClient = client.GetBlobClient(file.Name);
+            var pdfBlobName = _userContainerInfo.GetDocumentBlobName(fileName);
+            var pdfBlobClient = client.GetBlobClient(pdfBlobName);
 
             Func<Task<byte[]>> generateThumpnail = async () =>
             {
-                var pdfUrl = blobClient.Uri;
+                var pdfUrl = pdfBlobClient.Uri;
 
                 string script = "/js/pdfscript.js";
                 if (_pdfScript == null)
@@ -237,41 +237,42 @@ public class ChatSessionMediator
             };
 
             // Upload File Method
-            Func<Task> uploadPdfFile = async () =>
+            Func<Task<EmbeddedDocument>> uploadPdfFile = async () =>
             {
-                memoryStream.Seek(0, System.IO.SeekOrigin.Begin);
-                await blobClient.UploadAsync(memoryStream, new BlobUploadOptions()
-                {
-                    HttpHeaders = new()
+                // uplaod pdf file and embed content (images and table)
+                pdfStream.Seek(0, System.IO.SeekOrigin.Begin);
+                var document = await DocEmbed.UploadAndEmbedPDFFile(
+                    _userContainerInfo!,
+                    pdfStream,
+                    fileName,
+                    APP_ID,
+                    SESSION_ID,
+                    (message, progress, isError, isDone) =>
                     {
-                        ContentType = fileContentType
-                    }
-                });
+                        if (isError)
+                        {
+                            throw new Exception(message);
+                        }
+                        return Task.CompletedTask;
+                    });
 
                 // Set Metadata
-                await blobClient.SetMetadataAsync(
+                await pdfBlobClient.SetMetadataAsync(
                     new Dictionary<string, string> { { HASH_FIELD, fileHash } });
 
                 // generate thumpnail and upload
                 var thumbnail = await generateThumpnail();
-                var thumbData = new BinaryData(thumbnail);
-                var thumbnailBlobName = _userContainerInfo.GetThubmnailBlobName(file.Name);
-                var thumbnailBlobClient = client.GetBlobClient(thumbnailBlobName);
-                await thumbnailBlobClient.UploadAsync(thumbData, new BlobUploadOptions()
-                {
-                    HttpHeaders = new()
-                    {
-                        ContentType = "image/jpeg" // refer "/js/pdfscript.js"
-                    },
-                    TransferOptions = new() { MaximumConcurrency = 1 }
-                });
+                await DocEmbed.UploadThumbnail(_userContainerInfo, fileName, thumbnail);
+
+                return document;
             };
 
-            var exists = await blobClient.ExistsAsync();
+            EmbeddedDocument document;
+            var exists = await pdfBlobClient.ExistsAsync();
             if (exists.Value)
             {
                 // Retrieve metadata
-                var properties = await blobClient.GetPropertiesAsync();
+                var properties = await pdfBlobClient.GetPropertiesAsync();
                 var metadata = properties.Value.Metadata;
                 // NOTE : has not handle in case there is no hash field in Metadata
                 var blobHash = metadata[HASH_FIELD];
@@ -279,6 +280,9 @@ public class ChatSessionMediator
                 {
                     // Same file has been uploaded, tread as uploaded file success
                     // skip to read text from PDF file
+                    var jsonBlobName = _userContainerInfo.GetDocumentJsonBlobName(fileName);
+                    var jsonBlobClient = _userContainerInfo.GetContainerClient().GetBlobClient(jsonBlobName);
+                    document = await jsonBlobClient.GetJson<EmbeddedDocument>();
                 }
                 else
                 {
@@ -288,32 +292,23 @@ public class ChatSessionMediator
             }
             else
             {
-                await uploadPdfFile();
+                document = await uploadPdfFile();
 
                 // add new file to workspace, this approach will only work if there is only one active user per account
-                _workspaceFiles!.Add(GetWorkspaceFile(file.Name));
+                _workspaceFiles!.Add(GetWorkspaceFile(fileName));
                 WelcomePage.StateHasChanged();
             }
 
-
             // read text from PDF file
-            memoryStream.Seek(0, System.IO.SeekOrigin.Begin);
-            using var pdfReader = PdfDocument.Open(memoryStream);
             var pdfContentBuilder = new StringBuilder();
             pdfContentBuilder.Append("<content>");
-            foreach (var page in pdfReader.GetPages())
+            foreach (var pageContent in document.PageContents)
             {
                 pdfContentBuilder.Append("<page>");
-                pdfContentBuilder.Append(page.Text);
+                pdfContentBuilder.Append(pageContent);
                 pdfContentBuilder.Append("</page>");
             }
             pdfContentBuilder.Append("</content>");
-
-            _session.ChatPrompts.Add(new()
-            {
-                Role = ChatPromptRoles.System,
-                Content = pdfContentBuilder.ToString()
-            });
 
             // insert content (context) in file to ChatPrompts's system
             _session.ChatPrompts.Add(new()
@@ -323,7 +318,7 @@ public class ChatSessionMediator
             });
 
             // insert user prompt (command)
-            var attachedUri = blobClient.Uri.AbsoluteUri;
+            var attachedUri = pdfBlobClient.Uri.AbsoluteUri;
             _session.AddNewUserPrompt(
                 "Base on <content> in latest system's prompt, Summarize content",
                 attachedDocumentUri: attachedUri);

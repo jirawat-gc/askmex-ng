@@ -162,9 +162,30 @@ body, html {
             left: 50%;
         }
 
+        .files-container {
+            flex-direction: column;
+            height: 100%;
+            display: flex;
+
+            .body {
+                height: 100%;
+                overflow-y: auto;
+
+                .row {
+                    margin: 0;
+                }
+            }
+        }
+
         .file {
             background: none;
             border: 0;
+            text-align: left;
+
+            &.selected {
+                background-color: @gc-bright-blue;
+                color: white;
+            }
 
             .thumb-nail-container {
                 position: relative;
