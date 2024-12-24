@@ -7,8 +7,6 @@ export function pdfHandling()  {
 
     const delay = ms => new Promise(res => setTimeout(res, ms));
 
-    console.log('test 123');
-
     instance.generateThumbnail = async function (url) {
 
         const documentLoadingTask = await pdfjsLib.getDocument(url);
