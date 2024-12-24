@@ -145,18 +145,19 @@ public class ChatSessionMediator
         callBack.Invoke();
     }
 
-    private WorkspaceFile GetWorkspaceFile(string file)
+    private WorkspaceFile GetWorkspaceFile(string blobName)
     {
-        var thumbnailBlobName = _userContainerInfo!.GetThubmnailBlobName(file);
+        var thumbnailBlobName = _userContainerInfo!.GetThubmnailBlobName(blobName);
         var thumbnailClient = _userContainerInfo!
             .GetContainerClient()
             .GetBlobClient(thumbnailBlobName);
-        var fileName = Path.GetFileName(file);
+        var fileName = Path.GetFileName(blobName);
         return new WorkspaceFile()
         {
             Name = fileName,
             ThumbnailUrl = thumbnailClient.Uri.ToString(),
-            FileExtension = Path.GetExtension(file)
+            FileExtension = Path.GetExtension(blobName),
+            BlobName = blobName, 
         };
     }
 
@@ -164,10 +165,11 @@ public class ChatSessionMediator
 
     #region Mediator Pattern
 
+    #region Upload/Summarize PDF File
+
     public async Task OnConfirmToUseSelectedWorkspaceFileToSummarize(WorkspaceFile file)
     {
-        WelcomePage.HideWorkspaceFileBrowserView();
-        WelcomePage.StateHasChanged();
+        OnHideWorkspaceFileBrowserView();
 
         if (file.FileExtension != ".pdf")
         {
@@ -189,8 +191,7 @@ public class ChatSessionMediator
     public async Task OnSelectNewLocalPdfFileToSummarize(InputFileChangeEventArgs e)
     {
         await WelcomePage.HideFileOptionsModal();
-        WelcomePage.OpenChatView();
-        WelcomePage.StateHasChanged();
+        OnSwitchMainViewToChatView();
         var file = e.File;
         var fileName = file.Name;
 
@@ -251,7 +252,7 @@ public class ChatSessionMediator
             };
 
             // Upload File Method
-            Func<Task<EmbeddedDocument>> uploadPdfFile = async () =>
+            Func<Task<EmbeddedDocument>> uploadPdfAndThumbnail = async () =>
             {
                 // uplaod pdf file and embed content (images and table)
                 pdfStream.Seek(0, System.IO.SeekOrigin.Begin);
@@ -306,7 +307,7 @@ public class ChatSessionMediator
             }
             else
             {
-                document = await uploadPdfFile();
+                document = await uploadPdfAndThumbnail();
 
                 // add new file to workspace, this approach will only work if there is only one active user per account
                 _workspaceFiles!.Add(GetWorkspaceFile(fileName));
@@ -350,9 +351,88 @@ public class ChatSessionMediator
         await _session.InvokeAI(new() { Temperature = 0, MaxTokens = 1000 });
     }
 
+    public async Task OnChoosingExistingFileToSummarize()
+    {
+        await WelcomePage.HideFileOptionsModal();
+        OnSwitchMainViewToChatView();
+        OnOpenWorkspaceFileBrowserView();
+    }
+
+    #endregion
+
+    #region Switch MainView And Show/Hide WorkspaceFileBrowser
+
+    public void OnToggleWorkspaceFileBrowserView()
+    {
+        var isFileBrowserActive = WorkspaceFileBrowserComponent.IsActive;
+        if (isFileBrowserActive)
+        {
+            OnHideWorkspaceFileBrowserView();
+        }
+        else
+        {
+            OnOpenWorkspaceFileBrowserView();
+        }
+    }
+
+    public void OnOpenWorkspaceFileBrowserView()
+    {
+        WorkspaceFileBrowserComponent.IsActive = true;
+        WorkspaceFileBrowserComponent.StateHasChanged();
+        WelcomePage.DisplayState = DisplayState.LeftHalfView;
+        WelcomePage.StateHasChanged();
+    }
+
+    public void OnHideWorkspaceFileBrowserView()
+    {
+        WorkspaceFileBrowserComponent.IsActive = false;
+        WorkspaceFileBrowserComponent.ClearSelectedFile();
+        WorkspaceFileBrowserComponent.StateHasChanged();
+        WelcomePage.DisplayState = DisplayState.FullView;
+        WelcomePage.StateHasChanged();
+    }
+
+    public void OnToggleMainView()
+    {
+        var isChatView = WelcomePage.MainView == MainView.ChatView;
+        if (isChatView)
+        {
+            OnSwitchMainViewToWelcomeView();
+        }
+        else
+        {
+            OnSwitchMainViewToChatView();
+        }
+    }
+
+    public void OnSwitchMainViewToChatView()
+    {
+        WelcomePage.MainView = MainView.ChatView;
+        WelcomePage.StateHasChanged();
+        WorkspaceFileBrowserComponent.IsToggleButtonVisible = true;
+        WorkspaceFileBrowserComponent.StateHasChanged();
+    }
+
+    public void OnSwitchMainViewToWelcomeView()
+    {
+        WelcomePage.MainView = MainView.WelcomeView;
+        WorkspaceFileBrowserComponent.IsToggleButtonVisible = false;
+        WorkspaceFileBrowserComponent.IsActive = false;
+        WorkspaceFileBrowserComponent.ClearSelectedFile();
+        WorkspaceFileBrowserComponent.StateHasChanged();
+    }
+
+    #endregion
+
+    #region Components
+
     public Welcome WelcomePage { private get; set; }
 
     public ChatSession ChatSessionComponent { private get; set; }
+
+    public WorkspaceFileBrowser WorkspaceFileBrowserComponent { private get; set; }
+
+    #endregion
 
     #endregion
 

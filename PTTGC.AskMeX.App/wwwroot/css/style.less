@@ -134,9 +134,11 @@ body, html {
         background-color: @gc-platinum;
         padding: 10px 20px;
         font-size: 16px;
+        pointer-events: none;
 
-        &.active, &:hover {
+        &.visible {
             opacity: 1;
+            pointer-events: auto;
         }
 
         &.workspace-file-browser-active {

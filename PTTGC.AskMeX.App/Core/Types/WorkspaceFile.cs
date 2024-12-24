@@ -16,4 +16,6 @@ public class WorkspaceFile
     /// The content type of the file. Can only be ether ".pdf" or ".xlsx".
     /// </summary>
     public required string FileExtension { get; init; }
+
+    public required string BlobName { get; init; }
 }

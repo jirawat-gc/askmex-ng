@@ -1,0 +1,46 @@
+﻿
+<button class="@OpenWorkspaceFileBrowserButtonClasses" @onclick="Mediator.OnToggleWorkspaceFileBrowserView">
+    Choose File from Workspace
+</button>
+<div class="@WrokspaceFileBrowserViewClasses">
+    <div class="container files-container">
+        <h2>Files</h2>
+        <div class="body">
+            <div class="row">
+                @foreach (var file in Mediator.WorksapceFiles)
+                {
+                    var fileType = file.FileExtension;
+                    <button @onclick="() => SelectFile(file)"
+                            class="col-xxl-3 col-lg-4 col-md-6 col-sm-12 col-6 my-3 @(GetFileClasses(file))">
+                        <div class="thumb-nail-container">
+                            @if (file.FileExtension == ".pdf")
+                            {
+                                <img class="thumb-nail-image" src="@file.ThumbnailUrl" onerror="displayDefaultThumbailImage(event, '@(file.FileExtension)')" />
+                                <img class="file-icon" src="/icons/pdf-svgrepo-com.svg" />
+                            }
+                            else if (file.FileExtension == ".xlsx")
+                            {
+                                <img class="thumb-nail-image" src="/icons/file-color-svgrepo-com.svg" />
+                                <img class="file-icon" src="/icons/excel-svgrepo-com.svg" />
+                            }
+                        </div>
+                        <div class="file-name">@file.Name</div>
+                    </button>
+                }
+            </div>
+            <script>
+                function displayDefaultThumbailImage(event){
+                    event.target.onerror = null;
+                    event.target.src = '/icons/file-color-svgrepo-com.svg';
+                }
+            </script>
+        </div>
+        <div class="footer">
+            <button @onclick="() => Mediator.OnConfirmToUseSelectedWorkspaceFileToSummarize(_selectedFile!)"
+                    type="button" class="btn btn-primary @(ConfirmBtnClasses)">
+                Confirm
+            </button>
+            <button @onclick="Mediator.OnHideWorkspaceFileBrowserView" type="button" class="btn btn-secondary">Close</button>
+        </div>
+    </div>
+</div>

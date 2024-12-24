@@ -72,50 +72,9 @@
                 <ChatSession />
             </div>
         </div>
-         
-        <button class="@OpenWorkspaceFileBrowserButtonClasses" @onclick="ToggleWorkspaceFileBrowserView">
-            Choose File from Workspace
-        </button>
-        <div class="@WrokspaceFileBrowserViewClasses">
-            <div class="container files-container">
-                <h2>Files</h2>
-                <div class="body">
-                    <div class="row">
-                        @foreach (var file in Mediator.WorksapceFiles)
-                        {
-                            var fileType = file.FileExtension;
-                            <button @onclick="() => SelectFile(file)"
-                                class="col-xxl-3 col-lg-4 col-md-6 col-sm-12 col-6 my-3 @(GetFileClasses(file))">
-                                <div class="thumb-nail-container">
-                                    @if (file.FileExtension == ".pdf")
-                                    {
-                                        <img class="thumb-nail-image" src="@file.ThumbnailUrl" onerror="displayDefaultThumbailImage(event, '@(file.FileExtension)')" />
-                                        <img class="file-icon" src="/icons/pdf-svgrepo-com.svg" />
-                                    }
-                                    else if (file.FileExtension == ".xlsx")
-                                    {
-                                        <img class="thumb-nail-image" src="/icons/file-color-svgrepo-com.svg" />
-                                        <img class="file-icon" src="/icons/excel-svgrepo-com.svg" />
-                                    }
-                                </div>
-                                <div class="file-name">@file.Name</div>
-                            </button>
-                        }
-                    </div>
-                    <script>
-                        function displayDefaultThumbailImage(event){
-                            event.target.onerror = null;
-                            event.target.src = '/icons/file-color-svgrepo-com.svg';
-                        }
-                    </script>
-                </div>
-                <div class="footer">
-                    <button @onclick="() => Mediator.OnConfirmToUseSelectedWorkspaceFileToSummarize(_selectedFile!)"
-                        type="button" class="btn btn-primary @(ConfirmBtnClasses)">Confirm</button>
-                    <button @onclick="HideWorkspaceFileBrowserView" type="button" class="btn btn-secondary">Close</button>
-                </div>
-            </div>
-        </div>
+        
+        <WorkspaceFileBrowser />
+
     </div>
     <div class="@BottomContainerClasses">
         <div class="t-bottom-fade">
@@ -131,7 +90,7 @@
                     <div class="bar">
                         <div class="my-1">
                             <!--TODO: [YO] change svg icon to the one JP recommneded-->
-                            <button class="action-btn" @onclick="ToggleCurrentPage">
+                            <button class="action-btn" @onclick="Mediator.OnToggleMainView">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-clock-history" viewBox="0 0 16 16">
                                     <path d="M8.515 1.019A7 7 0 0 0 8 1V0a8 8 0 0 1 .589.022zm2.004.45a7 7 0 0 0-.985-.299l.219-.976q.576.129 1.126.342zm1.37.71a7 7 0 0 0-.439-.27l.493-.87a8 8 0 0 1 .979.654l-.615.789a7 7 0 0 0-.418-.302zm1.834 1.79a7 7 0 0 0-.653-.796l.724-.69q.406.429.747.91zm.744 1.352a7 7 0 0 0-.214-.468l.893-.45a8 8 0 0 1 .45 1.088l-.95.313a7 7 0 0 0-.179-.483m.53 2.507a7 7 0 0 0-.1-1.025l.985-.17q.1.58.116 1.17zm-.131 1.538q.05-.254.081-.51l.993.123a8 8 0 0 1-.23 1.155l-.964-.267q.069-.247.12-.501m-.952 2.379q.276-.436.486-.908l.914.405q-.24.54-.555 1.038zm-.964 1.205q.183-.183.35-.378l.758.653a8 8 0 0 1-.401.432z" />
                                     <path d="M8 1a7 7 0 1 0 4.95 11.95l.707.707A8.001 8.001 0 1 1 8 0z" />
@@ -154,7 +113,7 @@
                         <div class="chat-box-container my-1">
                             <!--NOTE [YO]: might need to convert chatbox to component-->
                             <textarea id="chat-box"
-                                      @onclick="OpenChatView"
+                                      @onclick="Mediator.OnSwitchMainViewToChatView"
                                       @bind="UserMessage"
                                       @bind:event="oninput"
                                       @onkeydown="HandleChatBoxKeyDown"
@@ -191,7 +150,7 @@
 <Modal @ref="fileOptionsModal" Title="Please select file options">
     <FooterTemplate>
         <Button Color="ButtonColor.Secondary"
-                @onclick="OnChoosingExistingFileToSummarize">
+                @onclick="Mediator.OnChoosingExistingFileToSummarize">
             Choose from existing files
         </Button>
         <Button @onclick="ChooseLocalFileToSummarize" Color="ButtonColor.Primary">Upload new File</Button>

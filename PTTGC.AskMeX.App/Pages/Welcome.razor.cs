@@ -4,7 +4,6 @@ using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.JSInterop;
 using PTTGC.AskMeX.App.Core.Services;
-using PTTGC.AskMeX.App.Core.Types;
 using System.Text;
 
 namespace PTTGC.AskMeX.App.Pages;
@@ -12,42 +11,12 @@ namespace PTTGC.AskMeX.App.Pages;
 public partial class Welcome : ComponentBase
 {
 
-    #region Toggleing between Welcome and Chat view
-
-    const string WelcomeView = "welcomeView";
-    const string ChatView = "chatView";
-    bool isWorkspaceFileBrowserActive = false;
-    public void OpenChatView()
+    protected override async Task OnInitializedAsync()
     {
-        CurrentPrimaryView = ChatView;
-    }
+        await base.OnInitializedAsync();
 
-    void ToggleCurrentPage()
-    {
-        CurrentPrimaryView = CurrentPrimaryView == WelcomeView ? ChatView : WelcomeView;
-    }
-
-    void ToggleWorkspaceFileBrowserView()
-    {
-        if (isWorkspaceFileBrowserActive)
-        {
-            HideWorkspaceFileBrowserView();
-        }
-        else
-        {
-            OpenWorkspaceFileBrowserView();
-        }
-    }
-
-    public void OpenWorkspaceFileBrowserView()
-    {
-        isWorkspaceFileBrowserActive = true;
-    }
-
-    public void HideWorkspaceFileBrowserView()
-    {
-        isWorkspaceFileBrowserActive = false;
-        _selectedFile = null;
+        await Mediator.LoadUserWorkspace();
+        Mediator.WelcomePage = this;
     }
 
     public new void StateHasChanged()
@@ -55,27 +24,19 @@ public partial class Welcome : ComponentBase
         base.StateHasChanged();
     }
 
-    string currentPrimaryView = WelcomeView;
-    string CurrentPrimaryView
-    {
-        get => currentPrimaryView;
-        set
-        {
-            currentPrimaryView = value;
-            if (value != ChatView)
-            {
-                isWorkspaceFileBrowserActive = false;
-            }
-        }
-    }
+    #region Toggleing between Welcome and Chat view
 
-    string WelcomeViewClasses
+    public MainView MainView { get; set; } = MainView.WelcomeView;
+
+    public DisplayState DisplayState { get; set; } = DisplayState.FullView;
+
+    private string WelcomeViewClasses
     {
         get
         {
             var classes = new StringBuilder();
             classes.Append("welcome-view");
-            if (CurrentPrimaryView == WelcomeView)
+            if (MainView == MainView.WelcomeView)
             {
                 classes.Append(" active");
             }
@@ -83,17 +44,17 @@ public partial class Welcome : ComponentBase
         }
     }
 
-    string ChatViewClasses
+    private string ChatViewClasses
     {
         get
         {
             var classes = new StringBuilder();
             classes.Append("chat-view");
-            if (CurrentPrimaryView == ChatView)
+            if (MainView == MainView.ChatView)
             {
                 classes.Append(" active");
             }
-            if (isWorkspaceFileBrowserActive)
+            if (DisplayState == DisplayState.LeftHalfView)
             {
                 classes.Append(" shring-half");
             }
@@ -102,45 +63,13 @@ public partial class Welcome : ComponentBase
         }
     }
 
-    string OpenWorkspaceFileBrowserButtonClasses
-    {
-        get
-        {
-            var classes = new StringBuilder();
-            classes.Append("open-workspace-file-broswer-btn");
-            if (CurrentPrimaryView == ChatView)
-            {
-                classes.Append(" active");
-            }
-            if (isWorkspaceFileBrowserActive)
-            {
-                classes.Append(" workspace-file-browser-active");
-            }
-            return classes.ToString();
-        }
-    }
-
-    string WrokspaceFileBrowserViewClasses
-    {
-        get
-        {
-            var classes = new StringBuilder();
-            classes.Append("workspace-file-browser");
-            if (isWorkspaceFileBrowserActive)
-            {
-                classes.Append(" active");
-            }
-            return classes.ToString();
-        }
-    }
-
-    string BottomContainerClasses
+    private string BottomContainerClasses
     {
         get
         {
             var classes = new StringBuilder();
             classes.Append("bottom-container");
-            if (isWorkspaceFileBrowserActive)
+            if (DisplayState == DisplayState.LeftHalfView)
             {
                 classes.Append(" width-half");
             }
@@ -152,9 +81,9 @@ public partial class Welcome : ComponentBase
 
     #region ChatBox related
 
-    bool preventKeyDownOnChatBox = false;
+    private bool preventKeyDownOnChatBox = false;
 
-    void HandleChatBoxKeyDown(KeyboardEventArgs e)
+    private void HandleChatBoxKeyDown(KeyboardEventArgs e)
     {
         // for case when user hold shift key and press enter, meaning user explicitly want to type new line
         // below case is for when user press enter without shift key, which will send message to system (AI)
@@ -171,7 +100,7 @@ public partial class Welcome : ComponentBase
 
     // for reset chat box back to idle/original state
     // otherwise user will not be able to type in chat box
-    void HandleChatBoxKeyUp(KeyboardEventArgs e)
+    private void HandleChatBoxKeyUp(KeyboardEventArgs e)
     {
         if (preventKeyDownOnChatBox)
         {
@@ -179,7 +108,7 @@ public partial class Welcome : ComponentBase
         }
     }
 
-    string UserMessage { get; set; }
+    private string UserMessage { get; set; }
 #if DEBUG
     // this is test message for development purpose
      = "this is a test, respond with OK";
@@ -187,18 +116,7 @@ public partial class Welcome : ComponentBase
     //= "Provide me 3 of markdown text with example";
 #endif
 
-    [Inject]
-    public required ChatSessionMediator Mediator { private get; init; }
-
     #endregion
-
-    protected override async Task OnInitializedAsync()
-    {
-        await base.OnInitializedAsync();
-
-        await Mediator.LoadUserWorkspace();
-        Mediator.WelcomePage = this;
-    }
 
     #region File uploading
 
@@ -229,45 +147,18 @@ public partial class Welcome : ComponentBase
 
     #endregion
 
-    #region Select Workspace File
+    [Inject]
+    public required ChatSessionMediator Mediator { private get; init; }
+}
 
-    private WorkspaceFile? _selectedFile;
+public enum MainView
+{
+    WelcomeView,
+    ChatView
+}
 
-    private void SelectFile(WorkspaceFile file)
-    {
-        _selectedFile = file;
-    }
-
-    private string GetFileClasses(WorkspaceFile file)
-    {
-        var classes = new StringBuilder();
-        classes.Append("file");
-        if (_selectedFile == file)
-        {
-            classes.Append(" selected");
-        }
-        return classes.ToString();
-    }
-
-    public async Task OnChoosingExistingFileToSummarize()
-    {
-        await HideFileOptionsModal();
-        OpenChatView();
-        OpenWorkspaceFileBrowserView();
-    }
-
-    private string ConfirmBtnClasses
-    {
-        get
-        {
-            if (_selectedFile == null)
-            {
-                return "disabled";
-            }
-
-            return "";
-        }
-    }
-
-    #endregion
+public enum DisplayState
+{
+    FullView,
+    LeftHalfView
 }

@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Components;
 using PTTGC.AskMeGc.BlazorCore;
 using PTTGC.AskMeGc.OpenAI.Types;
 using PTTGC.AskMeX.App.Core.Services;
-using System.Text.RegularExpressions;
 
 namespace PTTGC.AskMeX.App.Components;
 
