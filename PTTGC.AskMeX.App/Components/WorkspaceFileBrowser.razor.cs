@@ -7,12 +7,19 @@ namespace PTTGC.AskMeX.App.Components;
 
 public partial class WorkspaceFileBrowser
 {
-    private WorkspaceFile? _selectedFile;
+    private IFileBrowserStrategy? _modeStrategy;
+    private Dictionary<FileBrowserMode, IFileBrowserStrategy?> _strategyByMode;
 
     protected override async Task OnInitializedAsync()
     {
         await base.OnInitializedAsync();
         Mediator.WorkspaceFileBrowserComponent = this;
+        _strategyByMode= new()
+        {
+            { FileBrowserMode.None, null },
+            { FileBrowserMode.OnePdfToSummarize, new OnePdfToSummarizeStrategy(Mediator) },
+            { FileBrowserMode.SearchOnMultipleDocuments, new SearchOnMultipleDocumentsStrategy(Mediator) }
+        };
     }
 
     public new void StateHasChanged()
@@ -20,16 +27,12 @@ public partial class WorkspaceFileBrowser
         base.StateHasChanged();
     }
 
-    private void SelectFile(WorkspaceFile file)
-    {
-        _selectedFile = file;
-    }
-
     private string GetFileClasses(WorkspaceFile file)
     {
         var classes = new StringBuilder();
         classes.Append("file");
-        if (_selectedFile == file)
+        var isSelected = _modeStrategy?.IsSelected(file) ?? false;
+        if (isSelected)
         {
             classes.Append(" selected");
         }
@@ -38,22 +41,42 @@ public partial class WorkspaceFileBrowser
 
     public void ClearSelectedFile()
     {
-        _selectedFile = null;
+        _modeStrategy!.ClearSelectedFiles();
+    }
+
+    public void Open(FileBrowserMode mode)
+    {
+        Mode = mode;
+        _modeStrategy = _strategyByMode[mode];
+        IsActive = true;
+        base.StateHasChanged();
+    }
+
+    public void Close()
+    {
+        Mode = FileBrowserMode.None;
+        _modeStrategy?.ClearSelectedFiles();
+        IsActive = false;
+        base.StateHasChanged();
     }
 
     [Inject]
     public required ChatSessionMediator Mediator { private get; init; }
 
-    public bool IsActive { get; set; } = false;
+    public FileBrowserMode Mode { get; private set; }
+        = FileBrowserMode.None;
 
-    // TODO: visible when (CurrentPrimaryView == ChatView)
+    public bool IsActive { get; private set; }
+        = false;
+
     public bool IsToggleButtonVisible { get; set; }
 
     private string ConfirmBtnClasses
     {
         get
         {
-            if (_selectedFile == null)
+            var isReadyForSummit = _modeStrategy?.IsReadyToSummit ?? false;
+            if (!isReadyForSummit)
             {
                 return "disabled";
             }
@@ -93,4 +116,11 @@ public partial class WorkspaceFileBrowser
             return classes.ToString();
         }
     }
+}
+
+public enum FileBrowserMode
+{
+    None,
+    OnePdfToSummarize,
+    SearchOnMultipleDocuments
 }

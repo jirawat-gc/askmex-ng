@@ -10,7 +10,7 @@
                 @foreach (var file in Mediator.WorksapceFiles)
                 {
                     var fileType = file.FileExtension;
-                    <button @onclick="() => SelectFile(file)"
+                    <button @onclick="() => _modeStrategy?.ToggleFileSelection(file)"
                             class="col-xxl-3 col-lg-4 col-md-6 col-sm-12 col-6 my-3 @(GetFileClasses(file))">
                         <div class="thumb-nail-container">
                             @if (file.FileExtension == ".pdf")
@@ -36,7 +36,7 @@
             </script>
         </div>
         <div class="footer">
-            <button @onclick="() => Mediator.OnConfirmToUseSelectedWorkspaceFileToSummarize(_selectedFile!)"
+            <button @onclick="() => _modeStrategy!.Summit()"
                     type="button" class="btn btn-primary @(ConfirmBtnClasses)">
                 Confirm
             </button>

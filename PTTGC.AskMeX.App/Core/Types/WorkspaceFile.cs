@@ -1,4 +1,6 @@
-﻿namespace PTTGC.AskMeX.App.Core.Types;
+﻿using System.Diagnostics.CodeAnalysis;
+
+namespace PTTGC.AskMeX.App.Core.Types;
 
 public class WorkspaceFile
 {
@@ -18,4 +20,17 @@ public class WorkspaceFile
     public required string FileExtension { get; init; }
 
     public required string BlobName { get; init; }
+}
+
+public class WorkspaceFileBlobNameComparer : IEqualityComparer<WorkspaceFile>
+{
+    public bool Equals(WorkspaceFile? x, WorkspaceFile? y)
+    {
+        return x!.BlobName == y!.BlobName;
+    }
+
+    public int GetHashCode([DisallowNull] WorkspaceFile obj)
+    {
+        return obj.BlobName.GetHashCode();
+    }
 }

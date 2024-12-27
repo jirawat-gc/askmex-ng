@@ -1,10 +1,10 @@
-﻿using Azure.Storage.Blobs.Models;
-using Microsoft.AspNetCore.Components;
+﻿using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.AspNetCore.Components.WebAssembly.Authentication;
 using Microsoft.JSInterop;
 using PTTGC.AskMeGc;
+using PTTGC.AskMeGc.Brownie;
 using PTTGC.AskMeGc.DocumentEmbedding;
 using PTTGC.AskMeGc.OpenAI;
 using PTTGC.AskMeGc.OpenAI.Types;
@@ -12,10 +12,8 @@ using PTTGC.AskMeGc.Workspace;
 using PTTGC.AskMeX.App.Components;
 using PTTGC.AskMeX.App.Core.Types;
 using PTTGC.AskMeX.App.Pages;
-using System.IO;
 using System.Security.Cryptography;
 using System.Text;
-using UglyToad.PdfPig;
 
 namespace PTTGC.AskMeX.App.Core.Services;
 
@@ -27,14 +25,28 @@ public class ChatSessionMediator
 
     private readonly IAccessTokenProvider _tokenProvider;
     private readonly OpenAIChatSession _session;
-    private AccessToken? _accessToken;
     private readonly NavigationManager _navigationManagor;
     private readonly AuthenticationStateProvider _authenticationStateProvider;
+
+    #region Might need to separate this into another class to control the flow of how to access token
+    /// <summary>
+    /// Call method "InitiateRefreshTokenFlow" before using this instance
+    /// </summary>
     private readonly GCOpenAIPlatform _gcOpenAIPlatform = GCOpenAIPlatform.Instance;
+    /// <summary>
+    /// Call method "InitiateRefreshTokenFlow" before using this client
+    /// </summary>
     private readonly AskMeXGateKeeperClient _askMeXGateKeeperClient = AskMeXGateKeeperClient.Instance;
+    /// <summary>
+    /// Call method "InitiateRefreshTokenFlow" before using this class
+    /// </summary>
+    private ContainerInfo? _userContainerInfo;
+    private AccessToken? _accessToken;
+    #endregion
+
+    private string _fullWorkspaceName;
     private readonly IJSRuntime _jSRuntime;
     private IJSObjectReference _pdfScript;
-    private ContainerInfo? _userContainerInfo;
     private List<WorkspaceFile>? _workspaceFiles;
 
     public ChatSessionMediator(
@@ -52,7 +64,7 @@ public class ChatSessionMediator
 
     #region Methods
 
-    public async Task UserSendMessage(string message)
+    public async Task SendUserMessage(string message)
     {
         await InitiateRefreshTokenFlow(async () =>
         {
@@ -85,9 +97,9 @@ public class ChatSessionMediator
         {
             var state = await _authenticationStateProvider.GetAuthenticationStateAsync();
             var user = state.User;
-            var fullWorkspaceName = _askMeXGateKeeperClient.GetWorkspaceName(APP_ID, user);
+            _fullWorkspaceName = _askMeXGateKeeperClient.GetWorkspaceName(APP_ID, user);
             var workspaces = await _askMeXGateKeeperClient.ListWorkspaces(APP_ID, SESSION_ID);
-            var userWorkSpace = workspaces.FirstOrDefault(x => x.name == fullWorkspaceName);
+            var userWorkSpace = workspaces.FirstOrDefault(x => x.name == _fullWorkspaceName);
             if (userWorkSpace == null)
             {
                 var userObjectId = _askMeXGateKeeperClient.GetUserObjectId(user);
@@ -95,7 +107,7 @@ public class ChatSessionMediator
             }
             else
             {
-                _userContainerInfo = await _askMeXGateKeeperClient.AccessWorkspace(APP_ID, SESSION_ID, fullWorkspaceName);
+                _userContainerInfo = await _askMeXGateKeeperClient.AccessWorkspace(APP_ID, SESSION_ID, _fullWorkspaceName);
             }
 
             // force welcome page to re-render workspace files
@@ -157,7 +169,7 @@ public class ChatSessionMediator
             Name = fileName,
             ThumbnailUrl = thumbnailClient.Uri.ToString(),
             FileExtension = Path.GetExtension(blobName),
-            BlobName = blobName, 
+            BlobName = blobName,
         };
     }
 
@@ -264,6 +276,7 @@ public class ChatSessionMediator
                     SESSION_ID,
                     (message, progress, isError, isDone) =>
                     {
+                        // update progress on UI  here
                         if (isError)
                         {
                             throw new Exception(message);
@@ -355,7 +368,118 @@ public class ChatSessionMediator
     {
         await WelcomePage.HideFileOptionsModal();
         OnSwitchMainViewToChatView();
-        OnOpenWorkspaceFileBrowserView();
+        OnOpenWorkspaceFileBrowserView(FileBrowserMode.OnePdfToSummarize);
+    }
+
+    #endregion
+
+    #region Search On Multiple Documents
+
+    private HashSet<WorkspaceFile>? _workspaceFilesForSearch;
+
+    public Task OnConfirmToUseSelectedWorkspaceFilesToSearch(IEnumerable<WorkspaceFile> files)
+    {
+        _workspaceFilesForSearch = new(files, new WorkspaceFileBlobNameComparer());
+        OnHideWorkspaceFileBrowserView();
+
+        // generate system prompt for telling user to input search query
+        var assistantPromptBuilder = new StringBuilder();
+        assistantPromptBuilder.AppendLine("For the Following files you have selected :");
+        assistantPromptBuilder.AppendLine();
+        var fileNumber = 0;
+        foreach (var file in _workspaceFilesForSearch)
+        {
+            fileNumber++;
+            assistantPromptBuilder.AppendLine($"{fileNumber}. {file.Name}");
+        }
+        assistantPromptBuilder.AppendLine();
+        assistantPromptBuilder.AppendLine("**Please specifiy the question which you want to search in selected files above** or type `Cancel` if you wish to cancel the search.");
+        _session.ChatPrompts.Add(new()
+        {
+            Role = ChatPromptRoles.Assistant,
+            Content = assistantPromptBuilder.ToString()
+        });
+
+        WelcomePage.ChatBoxStrategy = new SearchFromWorkspacePDFsStrategy(this);
+        ChatSessionComponent.StateHasChanged();
+        return Task.CompletedTask;
+    }
+
+    public void OnCancelSearchFromWorkspacePDFs()
+    {
+        _session.AddNewUserPrompt("Cancel");
+
+        WelcomePage.ChatBoxStrategy = new TextPromptStrategy(this);
+        _workspaceFilesForSearch = null;
+        _session.ChatPrompts.Add(new()
+        {
+            Role = ChatPromptRoles.Assistant,
+            Content = "Search operation has been cancel."
+        });
+        ChatSessionComponent.StateHasChanged();
+    }
+
+    public async Task OnSubmitSearchQueryForWorkspacePDFs(string query)
+    {
+        await InitiateRefreshTokenFlow(async () =>
+        {
+            _session.AddNewUserPrompt(query);
+
+            var brownieBotInfo = new BrownieBotInfo()
+            {
+                BotId = _fullWorkspaceName,
+                Settings = new()
+                {
+                    { "HyperParameter_MaxTokens", "1000" },
+                    { "HyperParameter_Temperature", "0.25" },
+                }
+            };
+            var bot = new BrownieBotInstance();
+            bot.BotWorkspace = _userContainerInfo!;
+            bot.BrownieBotInfo = brownieBotInfo;
+
+            bot.BotSettings = brownieBotInfo.GetSettings();
+            bot.BotSettings.EnsuresSettingsValid();
+
+            bot.OpenAIHyperParameter.MaxTokens = bot.BotSettings.HyperParameter_MaxTokens;
+            bot.OpenAIHyperParameter.Temperature = bot.BotSettings.HyperParameter_Temperature;
+            bot.SelectedPersona = bot.BotSettings.Prompt_PersonaList[0];
+
+            // load json documents
+            var blobNames = _workspaceFilesForSearch!.Select(file => file.BlobName);
+            await bot.ReadBotDocument(_userContainerInfo!, blobNames);
+
+            bot.IsSearchOnly = false;
+
+            bot.TokenIsRequired = () =>
+            {
+                return Task.FromResult(_accessToken!.Value);
+            };
+
+            // TODO: convert [REF1] to markdown reference
+            // TODO: display status text on UI
+            // TODO: move BrownieBotInstance out of OpenAIChatSessio
+            _session.SimulateAssistantStreamingResponse(bot);
+
+            //instance.StateUpdate += async (state) =>
+            //{
+            //    //state. ( string StatusText, string OutputToken, bool IsError, bool IsDone)
+            //    //calling chat promp event
+            //    //await sw.WriteLineAsync(state);
+            //    //await sw.FlushAsync();
+            //};
+
+            await bot.SubmitPrompt(query);
+
+            WelcomePage.ChatBoxStrategy = new TextPromptStrategy(this);
+            _workspaceFilesForSearch = null;
+        });
+    }
+
+    public void OnPressTaskSearchForDocuments()
+    {
+        OnSwitchMainViewToChatView();
+        OnOpenWorkspaceFileBrowserView(FileBrowserMode.SearchOnMultipleDocuments);
     }
 
     #endregion
@@ -371,23 +495,20 @@ public class ChatSessionMediator
         }
         else
         {
-            OnOpenWorkspaceFileBrowserView();
+            OnOpenWorkspaceFileBrowserView(FileBrowserMode.None);
         }
     }
 
-    public void OnOpenWorkspaceFileBrowserView()
+    public void OnOpenWorkspaceFileBrowserView(FileBrowserMode mode)
     {
-        WorkspaceFileBrowserComponent.IsActive = true;
-        WorkspaceFileBrowserComponent.StateHasChanged();
+        WorkspaceFileBrowserComponent.Open(mode);
         WelcomePage.DisplayState = DisplayState.LeftHalfView;
         WelcomePage.StateHasChanged();
     }
 
     public void OnHideWorkspaceFileBrowserView()
     {
-        WorkspaceFileBrowserComponent.IsActive = false;
-        WorkspaceFileBrowserComponent.ClearSelectedFile();
-        WorkspaceFileBrowserComponent.StateHasChanged();
+        WorkspaceFileBrowserComponent.Close();
         WelcomePage.DisplayState = DisplayState.FullView;
         WelcomePage.StateHasChanged();
     }
@@ -416,10 +537,9 @@ public class ChatSessionMediator
     public void OnSwitchMainViewToWelcomeView()
     {
         WelcomePage.MainView = MainView.WelcomeView;
+        WelcomePage.StateHasChanged();
         WorkspaceFileBrowserComponent.IsToggleButtonVisible = false;
-        WorkspaceFileBrowserComponent.IsActive = false;
-        WorkspaceFileBrowserComponent.ClearSelectedFile();
-        WorkspaceFileBrowserComponent.StateHasChanged();
+        WorkspaceFileBrowserComponent.Close();
     }
 
     #endregion

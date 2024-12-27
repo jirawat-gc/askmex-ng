@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.JSInterop;
+using PTTGC.AskMeX.App.Core;
 using PTTGC.AskMeX.App.Core.Services;
 using System.Text;
 
@@ -16,6 +17,7 @@ public partial class Welcome : ComponentBase
         await base.OnInitializedAsync();
 
         await Mediator.LoadUserWorkspace();
+        ChatBoxStrategy = new TextPromptStrategy(Mediator);
         Mediator.WelcomePage = this;
     }
 
@@ -89,8 +91,10 @@ public partial class Welcome : ComponentBase
         // below case is for when user press enter without shift key, which will send message to system (AI)
         if (e.Key == "Enter" && !e.ShiftKey)
         {
+            // prevent from sending empty message
             var message = UserMessage;
-            Task.Run(() => Mediator.UserSendMessage(message));
+            Task.Run(() => ChatBoxStrategy!.Submit(message));
+
             UserMessage = string.Empty;
             preventKeyDownOnChatBox = true;
 
@@ -115,6 +119,8 @@ public partial class Welcome : ComponentBase
     //= "Generate 10 sentences of essay";
     //= "Provide me 3 of markdown text with example";
 #endif
+
+    public IChatBoxStrategy ChatBoxStrategy { private get; set; }
 
     #endregion
 

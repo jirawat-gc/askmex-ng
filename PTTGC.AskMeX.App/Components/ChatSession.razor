@@ -31,7 +31,7 @@
     {
         <div class="coverstaion-item-container @(item.Role) @(item.CustomType)" data-itemid="@(item.CustomId)">
 
-            @if (item.Role == "user")
+            @if (item.Role == ChatPromptRoles.User)
             {
                 <div class="conversation-item">
                     <div class="content">
@@ -45,7 +45,7 @@
                     }
                 </div>
             }
-            else if (item.Role == "assistant")
+            else if (item.Role == ChatPromptRoles.Assistant)
             {
                 <div class="conversation-item">
 

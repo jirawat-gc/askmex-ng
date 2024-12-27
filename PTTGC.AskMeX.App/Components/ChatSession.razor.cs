@@ -1,6 +1,7 @@
 ﻿using Markdig;
 using Microsoft.AspNetCore.Components;
 using PTTGC.AskMeGc.BlazorCore;
+using PTTGC.AskMeGc.OpenAI;
 using PTTGC.AskMeGc.OpenAI.Types;
 using PTTGC.AskMeX.App.Core.Services;
 
@@ -9,7 +10,8 @@ namespace PTTGC.AskMeX.App.Components;
 public partial class ChatSession : IDisposable
 {
     private MarkdownPipeline? pipeline;
-    private bool isWorkspaceFileBrowserActive = false;
+    private HashSet<string> supportRoles
+        = new() { ChatPromptRoles.Assistant, ChatPromptRoles.User };
 
     protected override void OnAfterRender(bool firstRender)
     {
@@ -32,6 +34,11 @@ public partial class ChatSession : IDisposable
     {
         ChatSessionMediator.ChatPromptsChanged -= InvokeStateHasChanged;
         ChatSessionMediator.StreamingResponseReceived -= ChatSessionMediator_StreamingResponseReceived;
+    }
+
+    public new void StateHasChanged()
+    {
+        base.StateHasChanged();
     }
 
     private async void InvokeStateHasChanged()
@@ -72,7 +79,7 @@ public partial class ChatSession : IDisposable
     [Inject]
     public required ChatSessionMediator ChatSessionMediator { private get; init; }
 
-    private List<OpenAIChatMessage> ChatPrompts => ChatSessionMediator.ChatPrompts;
+    private IEnumerable<OpenAIChatMessage> ChatPrompts => ChatSessionMediator.ChatPrompts.Where(cp => supportRoles.Contains(cp.Role));
 
     private RefTracker<TypingText> TypingTexts { get; init; } = new();
 }
