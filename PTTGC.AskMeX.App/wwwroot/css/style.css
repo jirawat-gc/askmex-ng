@@ -244,6 +244,10 @@ html {
   width: 24px;
   height: 24px;
 }
+.home-page .chat-bar .bar .action-btn:disabled img,
+.home-page .chat-bar .bar .action-btn.disabled img {
+  opacity: 0.4;
+}
 .home-page .chat-bar .chat-box-container {
   padding-left: 1rem;
   padding-right: 1rem;
