@@ -1,29 +1,5 @@
 ﻿@using PTTGC.AskMeGc.OpenAI
-
-@* <div class="@ChatViewClasses">
-    <button class="open-workspace-file-broswer-btn" @onclick="ToggleWorkspaceFileBrowserView">
-        Choose File from Workspace
-    </button>
-    <div class="workspace-file-browser">
-        <h2>Files</h2>
-        <div class="row">
-            @for (int i = 0; i < 5; i++)
-            {
-                <div class="col-6">
-                    <div>{TODO: pending thumbnail image}</div>
-                    <div>file name</div>
-                    <img width="40" src="/icons/pdf-document-svgrepo-com.svg" />
-                </div>
-                <div class="col-6">
-                    <div>{TODO: pending thumbnail image}</div>
-                    <div>file name</div>
-                    <img width="40" src="/icons/excel-document-svgrepo-com.svg" />
-                </div>
-            }
-        </div>
-    </div>
-</div> *@
-
+@using PTTGC.AskMeX.App.Core.Types
 
 <div id="chatarea">
 
@@ -31,38 +7,81 @@
     {
         <div class="coverstaion-item-container @(item.Role) @(item.CustomType)" data-itemid="@(item.CustomId)">
 
-            @if (item.Role == ChatPromptRoles.User)
-            {
-                <div class="conversation-item">
-                    <div class="content">
-                        @(this.RenderMarkdown(item.RenderedContent))
-                    </div>
-                    @if (item.AttachedDocumentUri != null)
-                    {
-                        <a href="@item.AttachedDocumentUri" target="_blank" class="attached-document-container">
-                            <img src="/icons/file-svgrepo-com.svg" /><span>@(DisplayFileName(item.AttachedDocumentUri))</span>
-                        </a>
-                    }
-                </div>
-            }
-            else if (item.Role == ChatPromptRoles.Assistant)
-            {
-                <div class="conversation-item">
-
-                    <div class="content">
-                        @if (item.IsStreaming)
-                        {
-                            <TypingText IsTyping=@item.IsStreaming
-                                        Tracker=@TypingTexts
-                                        TypingDelay="0" />
-                        }
-                        else
-                        {
+            @{
+                //Displaying User's questions or command
+                if (item.Role == ChatPromptRoles.User)
+                {
+                    <div class="conversation-item">
+                        <div class="content">
                             @(this.RenderMarkdown(item.RenderedContent))
+                        </div>
+                        @if (item.AttachedDocumentUri != null)
+                        {
+                            <a href="@item.AttachedDocumentUri" target="_blank" class="attached-document-container">
+                                <img src="/icons/file-svgrepo-com.svg" /><span>@(DisplayFileName(item.AttachedDocumentUri))</span>
+                            </a>
                         }
                     </div>
+                }
+
+                //Displaying AI status message such as Loading files content..., or waiting for server response
+                else if (item.Role == CustomRole.AssistantReplyStatus)
+                {
+                    <div class="conversation-item">
+                        @if (item.CustomType == AssistantReplyCustomerType.AnswerProgressStatus)
+                        {
+                            <span class="spinner-grow spinner-grow-sm" aria-hidden="true"></span>
+                            <span role="status">@item.Content</span>
+                        }
+                        else if (item.CustomType == AssistantReplyCustomerType.ResultStatus)
+                        {
+                            <span role="status">@item.Content</span>
+                        }
+                    </div>
+                }
+
+                //Displaying Assistant (AI) response
+                else if (item.Role == ChatPromptRoles.Assistant)
+                {
+                    <div class="conversation-item">
+
+                        <div class="content">
+                            @if (item.IsStreaming)
+                            {
+                                <TypingText IsTyping=@item.IsStreaming
+                                            Tracker=@TypingTexts
+                                            TypingDelay="0" />
+                            }
+                            else
+                            {
+                                @(this.RenderMarkdown(item.RenderedContent))
+                            }
+                        </div>
+                        <!-- TODO: render item.Reference (Knowledge) DOM -->
+                        <!-- TODO: implement how click action work -->
+                    </div>
+                }
+            }
+        </div>
+    }
+
+    @*Displaying cover image with magnifying glass*@
+    @if (FilesSearchingState == FilesSearchingState.SearchingFiles)
+    {
+        <div class="knowledgelist">
+
+            @foreach (var file in Mediator.FilesBeingSearched)
+            {
+                <div class="knowledgeitem">
+                    <div class="content">
+                        <img src="@file.ThumbnailUrl" class="cover-image" />
+                        <img src="/icons/scanning_animate.png"
+                             class="scanning_animation">
+                    </div>
+                    <div class="title">@file.Name</div>
                 </div>
             }
+
         </div>
     }
 

@@ -271,7 +271,7 @@ html {
 .home-page .task-large,
 .home-page .task-small {
   background-color: white;
-  color: #3333333;
+  color: #333333;
   display: flex;
   border: 0;
   transition: transform 0.4s ease-out;
@@ -342,9 +342,75 @@ html {
   padding-bottom: 80px;
   will-change: width;
   transition: width 0.25s ease-out;
+  /*.coverstaion-item-container.table_result {
+        border-radius: 8px;
+        background-color: fade(white, 20%);
+        backdrop-filter: brightness(1.1);
+        padding: 20px;
+        box-shadow: 0 5px 10px @gc-navy-blue;
+        margin-top: 20px;
+        display: flex;
+        gap: 20px;
+
+        .tableresult {
+            flex-grow: 1;
+            overflow: scroll;
+            border-radius: 8px;
+            overflow: clip;
+
+            table {
+                margin-bottom: 0;
+            }
+        }
+
+        .chartresult {
+            background-color: white;
+            border-radius: 8px;
+            overflow: clip;
+        }
+    }
+
+    .attached-document-container {
+        display: inline-flex;
+        flex-direction: row;
+        align-items: center;
+
+        img {
+            width: 16px;
+            height: 16px;
+        }
+
+        span {
+            margin-left: 4px;
+        }
+    }
+
+    .function_call, .function_call_output {
+        font-size: 80%;
+    }
+
+    .coverstaion-item-container.function_call {
+        margin-top: 10px;
+        text-align: center;
+        color: @gc-navy-blue;
+
+        .spinner-border {
+            display: none;
+        }
+
+        &.last {
+            .spinner-border {
+                display: initial;
+            }
+        }
+    }
+
+    .coverstaion-item-container.function_call_output {
+        text-align: center;
+        color: @gc-navy-blue;
+    }*/
 }
-#chatarea .coverstaion-item-container.user:not(:first-child),
-#chatarea .coverstaion-item-container.assistant:not(:first-child) {
+#chatarea .coverstaion-item-container:not(:first-child) {
   margin-top: 20px;
 }
 #chatarea .coverstaion-item-container.user {
@@ -361,64 +427,20 @@ html {
 #chatarea .coverstaion-item-container.assistant .conversation-item {
   background-color: rgba(3, 3, 3, 0.5);
   border-radius: 8px;
+  color: white;
 }
-#chatarea .coverstaion-item-container.table_result {
-  border-radius: 8px;
-  background-color: rgba(255, 255, 255, 0.2);
-  backdrop-filter: brightness(1.1);
-  padding: 20px;
-  box-shadow: 0 5px 10px #26225F;
-  margin-top: 20px;
-  display: flex;
-  gap: 20px;
+#chatarea .coverstaion-item-container.assistant .conversation-item a,
+#chatarea .coverstaion-item-container.assistant .conversation-item .btn-link {
+  color: #29ace2;
 }
-#chatarea .coverstaion-item-container.table_result .tableresult {
-  flex-grow: 1;
-  overflow: scroll;
-  border-radius: 8px;
-  overflow: clip;
-}
-#chatarea .coverstaion-item-container.table_result .tableresult table {
-  margin-bottom: 0;
-}
-#chatarea .coverstaion-item-container.table_result .chartresult {
-  background-color: white;
-  border-radius: 8px;
-  overflow: clip;
-}
-#chatarea .attached-document-container {
-  display: inline-flex;
-  flex-direction: row;
-  align-items: center;
-}
-#chatarea .attached-document-container img {
-  width: 16px;
-  height: 16px;
-}
-#chatarea .attached-document-container span {
-  margin-left: 4px;
-}
-#chatarea .function_call,
-#chatarea .function_call_output {
-  font-size: 80%;
-}
-#chatarea .coverstaion-item-container.function_call {
-  margin-top: 10px;
+#chatarea .coverstaion-item-container.assistant-reply-status {
   text-align: center;
-  color: #26225F;
+  color: #DBDAD6;
 }
-#chatarea .coverstaion-item-container.function_call .spinner-border {
-  display: none;
-}
-#chatarea .coverstaion-item-container.function_call.last .spinner-border {
-  display: initial;
-}
-#chatarea .coverstaion-item-container.function_call_output {
-  text-align: center;
-  color: #26225F;
+#chatarea .coverstaion-item-container.assistant-reply-status .conversation-item {
+  padding: 0;
 }
 #chatarea .conversation-item {
-  color: white;
   padding: 20px;
 }
 #chatarea .conversation-item p:last-child {
@@ -429,6 +451,7 @@ html {
   flex-wrap: wrap;
   padding: 20px;
   padding-left: 80px;
+  justify-content: center;
 }
 #chatarea .knowledgelist .knowledgeitem {
   padding: 15px;
@@ -456,6 +479,27 @@ html {
   position: absolute;
   top: calc((100% - 100px) / 2);
   left: calc((100% - 100px) / 2);
+}
+#chatarea .knowledgelist .knowledgeitem > div.content .cover-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+#chatarea .knowledgelist .knowledgeitem > div.title {
+  color: #333;
+  font-size: 16px;
+  line-height: normal;
+  font-weight: bold;
+  margin-top: 10px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-clamp: 2;
 }
 #chatarea .knowledgelist .knowledgeitem h4,
 #chatarea .knowledgelist .knowledgeitem h5,

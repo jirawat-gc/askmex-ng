@@ -10,6 +10,7 @@ using PTTGC.AskMeGc.OpenAI;
 using PTTGC.AskMeGc.OpenAI.Types;
 using PTTGC.AskMeGc.Workspace;
 using PTTGC.AskMeX.App.Components;
+using PTTGC.AskMeX.App.Core.Configurations;
 using PTTGC.AskMeX.App.Core.Types;
 using PTTGC.AskMeX.App.Pages;
 using System.Security.Cryptography;
@@ -60,6 +61,23 @@ public class ChatSessionMediator
         _navigationManagor = navigationManagor;
         _authenticationStateProvider = authenticationStateProvider;
         _jSRuntime = jSRuntime;
+
+#if DEBUG
+        if (DebugSettings.IsTestingFilesSearchingState)
+        {
+            FilesBeingSearched = new();
+            for (int i = 0; i < 3; i++)
+            {
+                FilesBeingSearched.Add(new()
+                {
+                    BlobName = "abc",
+                    FileExtension = ".pdf",
+                    Name = "Getting started with OneDrive 2.pdf",
+                    ThumbnailUrl = "https://gcazdtestbenchst01.blob.core.windows.net/workspace-askmexspaces-ce1ef78f-99f8-4277-8eb3-48afa19ecf82/fileinventory/thumbnail/Getting started with OneDrive 2.jpg?sv=2024-11-04&st=2024-12-30T09%3A07%3A45Z&se=2024-12-31T09%3A07%3A45Z&sr=c&sp=racwdxyltmei&sig=0OTkexD2mjK2w69k%2B6SxKqv3f1RkG4Zq3%2B3pRtII8bU%3D"
+                });
+            }
+        }
+#endif
     }
 
     #region Methods
@@ -95,6 +113,7 @@ public class ChatSessionMediator
     {
         await InitiateRefreshTokenFlow(async () =>
         {
+            // TODO: move this code to common library
             var state = await _authenticationStateProvider.GetAuthenticationStateAsync();
             var user = state.User;
             _fullWorkspaceName = _askMeXGateKeeperClient.GetWorkspaceName(APP_ID, user);
@@ -362,6 +381,8 @@ public class ChatSessionMediator
 
         // summit prompts
         await _session.InvokeAI(new() { Temperature = 0, MaxTokens = 1000 });
+
+        // TODO: need to set previous system prompt to be excluded from context
     }
 
     public async Task OnChoosingExistingFileToSummarize()
@@ -376,6 +397,7 @@ public class ChatSessionMediator
     #region Search On Multiple Documents
 
     private HashSet<WorkspaceFile>? _workspaceFilesForSearch;
+    public HashSet<WorkspaceFile>? FilesBeingSearched { get; private set; }
 
     public Task OnConfirmToUseSelectedWorkspaceFilesToSearch(IEnumerable<WorkspaceFile> files)
     {
@@ -456,18 +478,137 @@ public class ChatSessionMediator
                 return Task.FromResult(_accessToken!.Value);
             };
 
-            // TODO: convert [REF1] to markdown reference
-            // TODO: display status text on UI
-            // TODO: move BrownieBotInstance out of OpenAIChatSessio
-            _session.SimulateAssistantStreamingResponse(bot);
+            // normal mode (not priority)
+            // TODO: wiring send message btn to action
 
-            //instance.StateUpdate += async (state) =>
-            //{
-            //    //state. ( string StatusText, string OutputToken, bool IsError, bool IsDone)
-            //    //calling chat promp event
-            //    //await sw.WriteLineAsync(state);
-            //    //await sw.FlushAsync();
-            //};
+            // search mode (not priority)
+            // TODO: change UI when in search mode without file enter and nothing happen
+            // TODO: change UI when user have selected files, enable send button
+            // TODO: change UI to display selected files
+
+            // ---
+
+            // TODO: convert [REF1] to markdown reference
+
+            var assistantReplyStatus = new OpenAIChatMessage()
+            {
+                Role = CustomRole.AssistantReplyStatus,
+                Content = "กำลังเตรียมข้อมูล",
+                IsStreaming = false,
+                CustomType = AssistantReplyCustomerType.AnswerProgressStatus,
+                IsExcludedFromContext = true,
+            };
+
+            var messageBuilder = new StringBuilder();
+            var message = new OpenAIChatMessage()
+            {
+                Role = ChatPromptRoles.Assistant,
+                Content = string.Empty,
+                IsStreaming = true,
+                References = new()
+            };
+
+            FilesBeingSearched = new(new WorkspaceFileBlobNameComparer());
+            var fileByFileName = _workspaceFilesForSearch!.ToDictionary(file => file.Name);
+            ChatSessionComponent.FilesSearchingState = FilesSearchingState.PendingAI;
+            this.ChatPrompts.Add(assistantReplyStatus);
+
+            // as state would be yeilding status -> knowledge -> status -> token in order
+            // expected state flow would be
+            // FileSearchingState : PendingAI -> DisplayingLatestStatus -> SearchingFiles -> ReplyingToUser
+            // the reason we should not embed FileSearchingState into the OpenAIChatMessage is because
+            // in order to display message as requirement, we need 2 messages (assisnant reply status and assisnant reply message)
+            // and need to display cover image with magnifying glass icon which does not include in the OpenAIChatMessage
+            // that is why FileSearchingState should not be state of chat message but instead state of operation (search operation)
+
+            Func<string, Task> updateStatusText = (status) =>
+            {
+                if (string.IsNullOrEmpty(status))
+                {
+                    return Task.CompletedTask;
+                }
+
+                var isPendingAIState = ChatSessionComponent.FilesSearchingState == FilesSearchingState.PendingAI;
+                if (isPendingAIState)
+                {
+                    ChatSessionComponent.FilesSearchingState = FilesSearchingState.DisplayingLatestStatus;
+                    ChatSessionComponent.StateHasChanged();
+                }
+
+                if (assistantReplyStatus.Content != status)
+                {
+                    assistantReplyStatus.Content = status;
+                    ChatSessionComponent.StateHasChanged();
+                }
+
+                return Task.CompletedTask;
+            };
+
+            Func<KnowledgeSource, Task> updateKnowledge = (loadedKnowledge) =>
+            {
+                if (loadedKnowledge == null)
+                {
+                    return Task.CompletedTask;
+                }
+
+                var isDisplayingLatestStatusState = ChatSessionComponent.FilesSearchingState == FilesSearchingState.DisplayingLatestStatus;
+                if (isDisplayingLatestStatusState)
+                {
+                    ChatSessionComponent.FilesSearchingState = FilesSearchingState.SearchingFiles;
+                }
+
+                message.References.Add(loadedKnowledge);
+                var originalFileName = loadedKnowledge.EmbededDocumentDto.OriginalFileName;
+                var file = fileByFileName[originalFileName];
+                var fileAdded = FilesBeingSearched.Add(file);
+                if (fileAdded)
+                {
+                    ChatSessionComponent.StateHasChanged();
+                }
+
+                return Task.CompletedTask;
+            };
+
+            Func<string, bool, Task> updateBotResponse = (token, isDone) =>
+            {
+                if (string.IsNullOrEmpty(token))
+                {
+                    return Task.CompletedTask;
+                }
+
+                var isSearchingFilesState = ChatSessionComponent.FilesSearchingState == FilesSearchingState.SearchingFiles;
+                if (isSearchingFilesState)
+                {
+                    ChatSessionComponent.FilesSearchingState = FilesSearchingState.ReplyingToUser;
+                    this.ChatPrompts.Add(message);
+                    ChatSessionComponent.StateHasChanged();
+                }
+
+                ChatSessionComponent.Mediator_StreamingResponseReceived((token, isDone));
+                messageBuilder.Append(token);
+
+                return Task.CompletedTask;
+            };
+
+            bot.StateUpdate = async (state) =>
+            {
+                var isDone = state.IsDone;
+                await updateStatusText(state.StatusText);
+                await updateKnowledge(state.Knowledge);
+                await updateBotResponse(state.OutputToken, isDone);
+
+                if (isDone)
+                {
+                    // for the case isError is true, expected to do the same things
+                    ChatSessionComponent.FilesSearchingState = FilesSearchingState.None;
+                    assistantReplyStatus.CustomType = AssistantReplyCustomerType.ResultStatus;
+                    message.Content = messageBuilder.ToString();
+                    message.IsStreaming = false;
+                    ChatSessionComponent.StateHasChanged();
+
+                    FilesBeingSearched = null;
+                }
+            };
 
             await bot.SubmitPrompt(query);
 

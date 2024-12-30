@@ -22,7 +22,7 @@
 @dex-gradient-small: linear-gradient(90deg, rgba(33,211,238,1) 0%, rgba(88,156,246,1) 60%, rgba(117,126,250,1) 95%);
 
 // NOTE [YO] I defined the following color by my-self base on exiting gradian
-@gc-black-three: #3333333;
+@gc-black-three: #333333;
 @gc-seventy-string-blue: #678df8;
 @gc-light-blue: #7381fa;
 @gc-strong-blue: #4f59e3;
@@ -446,7 +446,7 @@ body, html {
     will-change: width;
     transition: width 0.25s ease-out;
 
-    .coverstaion-item-container.user:not(:first-child), .coverstaion-item-container.assistant:not(:first-child) {
+    .coverstaion-item-container:not(:first-child) {
         margin-top: 20px;
     }
 
@@ -467,10 +467,23 @@ body, html {
         .conversation-item {
             background-color: @gc-slidly-dark-transparent;
             border-radius: @gc-border-radius-small;
+            color: white;
+
+            a, .btn-link {
+                color: @gc-bright-blue
+            }
         }
     }
 
-    .coverstaion-item-container.table_result {
+    .coverstaion-item-container.assistant-reply-status {
+        text-align: center;
+        color: @gc-platinum;
+
+        .conversation-item {
+            padding: 0;
+        }
+    }
+    /*.coverstaion-item-container.table_result {
         border-radius: 8px;
         background-color: fade(white, 20%);
         backdrop-filter: brightness(1.1);
@@ -536,10 +549,9 @@ body, html {
     .coverstaion-item-container.function_call_output {
         text-align: center;
         color: @gc-navy-blue;
-    }
+    }*/
 
     .conversation-item {
-        color: white;
         padding: 20px;
 
         p:last-child {
@@ -552,6 +564,7 @@ body, html {
         flex-wrap: wrap;
         padding: 20px;
         padding-left: 80px;
+        justify-content: center;
 
         .knowledgeitem {
             padding: 15px;
@@ -582,6 +595,29 @@ body, html {
                     top: calc((100% - 100px) / 2);
                     left: calc((100% - 100px) / 2);
                 }
+
+                .cover-image {
+                    width: 100%;
+                    height: 100%;
+                    object-fit: cover;
+                    position: absolute;
+                    top: 0;
+                    left: 0;
+                }
+            }
+
+            > div.title {
+                color: #333;
+                font-size: 16px;
+                line-height: normal;
+                font-weight: bold;
+                margin-top: 10px;
+                display: -webkit-box;
+                -webkit-line-clamp: 2;
+                -webkit-box-orient: vertical;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                line-clamp: 2;
             }
 
             h4, h5, h6 {
