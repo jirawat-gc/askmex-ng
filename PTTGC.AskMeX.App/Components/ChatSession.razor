@@ -49,12 +49,30 @@
                             @if (item.IsStreaming)
                             {
                                 <TypingText IsTyping=@item.IsStreaming
-                                            Tracker=@TypingTexts
-                                            TypingDelay="0" />
+                                Tracker=@TypingTexts
+                                TypingDelay="0" />
                             }
                             else
                             {
                                 @(this.RenderMarkdown(item.RenderedContent))
+
+                                if (item.References?.Count > 0)
+                                {
+                                    <hr />
+                                    <ul class="list-unstyled">
+                                        @{
+                                            var refNumber = 1;
+                                            foreach (var itemRef in item.References)
+                                            {
+                                                var fileName = itemRef.EmbededDocumentDto.OriginalFileName;
+                                                var startPage = itemRef.SourcePage;
+                                                var endPage = itemRef.SourcePageEnd;
+                                                <li><a href>[@(refNumber)]</a> @($"{fileName} | Page: {startPage} - {endPage}")</li>
+                                                refNumber++;
+                                            }
+                                        }
+                                    </ul>
+                                }
                             }
                         </div>
                         <!-- TODO: render item.Reference (Knowledge) DOM -->

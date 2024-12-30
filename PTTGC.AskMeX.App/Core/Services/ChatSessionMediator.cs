@@ -15,6 +15,7 @@ using PTTGC.AskMeX.App.Core.Types;
 using PTTGC.AskMeX.App.Pages;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace PTTGC.AskMeX.App.Core.Services;
 
@@ -45,9 +46,9 @@ public class ChatSessionMediator
     private AccessToken? _accessToken;
     #endregion
 
-    private string _fullWorkspaceName;
+    private string? _fullWorkspaceName;
     private readonly IJSRuntime _jSRuntime;
-    private IJSObjectReference _pdfScript;
+    private IJSObjectReference? _pdfScript;
     private List<WorkspaceFile>? _workspaceFiles;
 
     public ChatSessionMediator(
@@ -62,10 +63,13 @@ public class ChatSessionMediator
         _authenticationStateProvider = authenticationStateProvider;
         _jSRuntime = jSRuntime;
 
+        #region DEBUG settings
 #if DEBUG
         if (DebugSettings.IsTestingFilesSearchingState)
         {
+#pragma warning disable CS0162 // Unreachable code detected
             FilesBeingSearched = new();
+#pragma warning restore CS0162 // Unreachable code detected
             for (int i = 0; i < 3; i++)
             {
                 FilesBeingSearched.Add(new()
@@ -77,7 +81,69 @@ public class ChatSessionMediator
                 });
             }
         }
+        if (DebugSettings.IsTestingPostProcessingAssistantPrompWithReferences)
+        {
+            var message = new OpenAIChatMessage()
+            {
+                Role = ChatPromptRoles.Assistant,
+                Content = "Microsoft OneDrive is cloud storage that you can access from anywhere. It helps you stay organized, access your important documents, photos, and other files from any device[REF-0], and share those files with friends, family, or coworkers. [REF-1]",
+                References = new()
+                {
+                    new()
+                    {
+                        EmbededDocumentDto = new()
+                        {
+                            OriginalFileName = "Motor_LMG_ชั้น2บวก_No.pdf",
+                            Description ="Insurance Company: LMG, Insurance Type: Automobile, Class: 2 Plus (ชั้น 2 บวก, ชั้น 2+, Class 2+)",
+                            Url ="https://gcazdtestbenchst01.blob.core.windows.net/workspace-brownie-postmantest/fileinventory/files/Motor_LMG_ชั้น2บวก_No.pdf?sv=2024-11-04&st=2024-12-27T08%3A23%3A05Z&se=2024-12-27T12%3A23%3A05Z&sr=c&sp=rl&sig=LjL0dMx8PntOovDwtfxUke%2FcGNcpdvb%2Fn29EMJcIl6c%3D",
+                            JsonUrl ="https://gcazdtestbenchst01.blob.core.windows.net/workspace-brownie-postmantest/fileinventory/Motor_LMG_ชั้น2บวก_No.json?sv=2024-11-04&st=2024-12-27T08%3A23%3A05Z&se=2024-12-27T12%3A23%3A05Z&sr=c&sp=rl&sig=LjL0dMx8PntOovDwtfxUke%2FcGNcpdvb%2Fn29EMJcIl6c%3D",
+                            CoverUrl ="https://gcazdtestbenchst01.blob.core.windows.net/workspace-brownie-postmantest/fileinventory/thumbnail/Motor_LMG_ชั้น2บวก_No.jpg?sv=2024-11-04&st=2024-12-27T08%3A23%3A05Z&se=2024-12-27T12%3A23%3A05Z&sr=c&sp=rl&sig=LjL0dMx8PntOovDwtfxUke%2FcGNcpdvb%2Fn29EMJcIl6c%3D",
+                            LastModified = new DateTime(2024, 10, 18, 12,56,20, DateTimeKind.Utc) ,//"2024-10-18T19:56:20.936+07:00",
+                            TotalPages =13
+                        },
+                        SourceId ="Motor_LMG_ชั้น2บวก_No.pdf-13-13",
+                        InternalId ="REF-0",
+                        SourceEmbeddingChunkContentKey ="Motor_LMG_ชั้น2บวก_No.pdf",
+                        SourcePage =13,
+                        SourcePageEnd =13,
+                        Knowledge ="ข้อ 4. การสละสิทธิ\nในกรณีที่มีความเสียหายหรือสูญหายต่อรถยนต์ เมื่อบุคคลอื่นเป็นผู้ใช้รถยนต์โดยได้รับความ ยินยอมจากผู้เอาประกันภัย บริษัทสละสิทธิในการไล่เบี้ยจากผู้ใช้รถยนต์นั้น เว้นแต่การใช้โดยบุคคลของ สถานให้บริการเกี่ยวกับการซ่อมแซมรถ การทำความสะอาดรถ การบำรุงรักษารถ หรือการติดตั้งอุปกรณ์ เพิ่มเติม เมื่อรถยนต์ได้ส่งมอบให้เพื่อรับบริการนั้น\nข้อ 5. การยกเว้นรถยนต์สูญหาย ไฟไหม้ การประกันภัยนี้ไม่คุ้มครองความสูญหาย หรือไฟไหม้อัน เกิดจาก\n5.1 ความเสียหายหรือสูญหายอันเกิดจากการลักทรัพย์ หรือยักยอกทรัพย์ โดยคู่สมรส หรือบุคคลซึ่งอยู่กินกันฉันสามีภรรยาโดยไม่ได้จดทะเบียนสมรส หรือบุคคลที่เป็นหุ้นส่วนทางธุรกิจ กับผู้เอาประกันภัย หรือผู้ค้ำประกันตามสัญญาเช่าซื้อรถยนต์ หรือบุคคลได้รับมอบรถยนต์หรือ ครอบครองรถยนต์ตามสัญญายืม สัญญาเช่า สัญญาเช่าซื้อ หรือสัญญาจำนำ หรือบุคคลที่จะกระทำ สัญญาดังกล่าวข้างต้น ทั้งนี้ไม่ว่าบุคคลดังกล่าวมีเจตนาแท้จริงจะทำสัญญาดังกล่าวหรือไม่ก็ตาม\n5.2 การใช้รถยนต์นอกอาณาเขตที่คุ้มครอง",
+                        KnowledgeSummary ="- Waiver of rights in case of damage or loss when another person uses the vehicle with the insured's consent.\n- Exclusions related to theft or loss caused by certain individuals (e.g., spouse, business partners).\n- Exclusions for vehicle use outside the covered territory.",
+                        Certainty =0.8581109057509099,
+                        Usefulness =2,
+                        Rationale ="The content discusses exclusions related to theft or loss, which is relevant to the user's inquiry about coverage for vehicle theft under the LMG 2 plus insurance.",
+                        RelatedKnowledge =[]
+                    },
+                    new()
+                    {
+                        EmbededDocumentDto = new()
+                        {
+                            OriginalFileName = "Motor_LMG_ชั้น3บวก_No.pdf",
+                            Description ="Insurance Company: LMG, Insurance Type: Automobile, Class: 2 Plus (ชั้น 2 บวก, ชั้น 2+, Class 2+)",
+                            Url ="https://gcazdtestbenchst01.blob.core.windows.net/workspace-brownie-postmantest/fileinventory/files/Motor_LMG_ชั้น2บวก_No.pdf?sv=2024-11-04&st=2024-12-27T08%3A23%3A05Z&se=2024-12-27T12%3A23%3A05Z&sr=c&sp=rl&sig=LjL0dMx8PntOovDwtfxUke%2FcGNcpdvb%2Fn29EMJcIl6c%3D",
+                            JsonUrl ="https://gcazdtestbenchst01.blob.core.windows.net/workspace-brownie-postmantest/fileinventory/Motor_LMG_ชั้น2บวก_No.json?sv=2024-11-04&st=2024-12-27T08%3A23%3A05Z&se=2024-12-27T12%3A23%3A05Z&sr=c&sp=rl&sig=LjL0dMx8PntOovDwtfxUke%2FcGNcpdvb%2Fn29EMJcIl6c%3D",
+                            CoverUrl ="https://gcazdtestbenchst01.blob.core.windows.net/workspace-brownie-postmantest/fileinventory/thumbnail/Motor_LMG_ชั้น2บวก_No.jpg?sv=2024-11-04&st=2024-12-27T08%3A23%3A05Z&se=2024-12-27T12%3A23%3A05Z&sr=c&sp=rl&sig=LjL0dMx8PntOovDwtfxUke%2FcGNcpdvb%2Fn29EMJcIl6c%3D",
+                            LastModified = new DateTime(2024, 10, 18, 12,56,20, DateTimeKind.Utc) ,//"2024-10-18T19:56:20.936+07:00",
+                            TotalPages =13
+                        },
+                        SourceId ="Motor_LMG_ชั้น3บวก_No.pdf-2-3",
+                        InternalId ="REF-1",
+                        SourceEmbeddingChunkContentKey ="Motor_LMG_ชั้น3บวก_No.pdf",
+                        SourcePage =2,
+                        SourcePageEnd =3,
+                        Knowledge ="ข้อ 4. การสละสิทธิ\nในกรณีที่มีความเสียหายหรือสูญหายต่อรถยนต์ เมื่อบุคคลอื่นเป็นผู้ใช้รถยนต์โดยได้รับความ ยินยอมจากผู้เอาประกันภัย บริษัทสละสิทธิในการไล่เบี้ยจากผู้ใช้รถยนต์นั้น เว้นแต่การใช้โดยบุคคลของ สถานให้บริการเกี่ยวกับการซ่อมแซมรถ การทำความสะอาดรถ การบำรุงรักษารถ หรือการติดตั้งอุปกรณ์ เพิ่มเติม เมื่อรถยนต์ได้ส่งมอบให้เพื่อรับบริการนั้น\nข้อ 5. การยกเว้นรถยนต์สูญหาย ไฟไหม้ การประกันภัยนี้ไม่คุ้มครองความสูญหาย หรือไฟไหม้อัน เกิดจาก\n5.1 ความเสียหายหรือสูญหายอันเกิดจากการลักทรัพย์ หรือยักยอกทรัพย์ โดยคู่สมรส หรือบุคคลซึ่งอยู่กินกันฉันสามีภรรยาโดยไม่ได้จดทะเบียนสมรส หรือบุคคลที่เป็นหุ้นส่วนทางธุรกิจ กับผู้เอาประกันภัย หรือผู้ค้ำประกันตามสัญญาเช่าซื้อรถยนต์ หรือบุคคลได้รับมอบรถยนต์หรือ ครอบครองรถยนต์ตามสัญญายืม สัญญาเช่า สัญญาเช่าซื้อ หรือสัญญาจำนำ หรือบุคคลที่จะกระทำ สัญญาดังกล่าวข้างต้น ทั้งนี้ไม่ว่าบุคคลดังกล่าวมีเจตนาแท้จริงจะทำสัญญาดังกล่าวหรือไม่ก็ตาม\n5.2 การใช้รถยนต์นอกอาณาเขตที่คุ้มครอง",
+                        KnowledgeSummary ="- Waiver of rights in case of damage or loss when another person uses the vehicle with the insured's consent.\n- Exclusions related to theft or loss caused by certain individuals (e.g., spouse, business partners).\n- Exclusions for vehicle use outside the covered territory.",
+                        Certainty =0.8581109057509099,
+                        Usefulness =2,
+                        Rationale ="The content discusses exclusions related to theft or loss, which is relevant to the user's inquiry about coverage for vehicle theft under the LMG 2 plus insurance.",
+                        RelatedKnowledge =[]
+                    }
+                }
+            };
+            message.Content = PostProcessReferences(message.Content);
+            _session.ChatPrompts.Add(message);
+        }
 #endif
+        #endregion
     }
 
     #region Methods
@@ -618,6 +684,17 @@ public class ChatSessionMediator
             WelcomePage.ChatBoxStrategy = new TextPromptStrategy(this);
             _workspaceFilesForSearch = null;
         });
+    }
+
+    private string PostProcessReferences(string message)
+    {
+        return Regex.Replace(
+            message, 
+            @"\[REF-(\d+)\]",
+            match => { 
+                int index = int.Parse(match.Groups[1].Value);
+                return $"[[{index + 1}]](#)";
+            });
     }
 
     public void OnPressTaskSearchForDocuments()
