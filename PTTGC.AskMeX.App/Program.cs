@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Components.WebAssembly.Http;
 using PTTGC.AskMeGc;
 using PTTGC.AskMeGc.BlazorCore;
 using PTTGC.AskMeX.App;
-using PTTGC.AskMeX.App.Core;
+using PTTGC.AskMeX.App.Core.Configurations;
 using PTTGC.AskMeX.App.Core.Services;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);

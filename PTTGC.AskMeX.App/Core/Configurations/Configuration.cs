@@ -1,4 +1,4 @@
-﻿namespace PTTGC.AskMeX.App.Core;
+﻿namespace PTTGC.AskMeX.App.Core.Configurations;
 
 public class Configuration
 {
