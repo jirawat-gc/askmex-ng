@@ -368,11 +368,13 @@ public class ChatSessionMediator
         pdfContentBuilder.Append("</content>");
 
         // insert content (context) in file to ChatPrompts's system
-        _session.ChatPrompts.Add(new()
+        var systemPrompt = new OpenAIChatMessage()
         {
             Role = ChatPromptRoles.System,
-            Content = pdfContentBuilder.ToString()
-        });
+            Content = pdfContentBuilder.ToString(),
+            IsExcludedFromContext = false
+        };
+        _session.ChatPrompts.Add(systemPrompt);
 
         // insert user prompt (command)
         _session.AddNewUserPrompt(
@@ -382,7 +384,8 @@ public class ChatSessionMediator
         // summit prompts
         await _session.InvokeAI(new() { Temperature = 0, MaxTokens = 1000 });
 
-        // TODO: need to set previous system prompt to be excluded from context
+        // exclude system prompt from context to unnecessary token consumtion
+        systemPrompt.IsExcludedFromContext = true;
     }
 
     public async Task OnChoosingExistingFileToSummarize()
