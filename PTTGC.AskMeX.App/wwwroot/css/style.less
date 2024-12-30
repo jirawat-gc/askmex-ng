@@ -460,6 +460,21 @@ body, html {
             display: inline-block;
             width: auto;
             max-width: 50%;
+
+            .attached-document-container {
+                display: inline-flex;
+                flex-direction: row;
+                align-items: center;
+
+                img {
+                    width: 16px;
+                    height: 16px;
+                }
+
+                span {
+                    margin-left: 4px;
+                }
+            }
         }
     }
 
@@ -508,21 +523,6 @@ body, html {
             background-color: white;
             border-radius: 8px;
             overflow: clip;
-        }
-    }
-
-    .attached-document-container {
-        display: inline-flex;
-        flex-direction: row;
-        align-items: center;
-
-        img {
-            width: 16px;
-            height: 16px;
-        }
-
-        span {
-            margin-left: 4px;
         }
     }
 
